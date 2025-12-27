@@ -145,12 +145,12 @@ export const medicationColumns: CsvColumn<{
   name: string;
   dosage: string | null;
   frequency: string | null;
-  startDate: string | null;
-  endDate: string | null;
+  startDate: Date | null;
+  endDate: Date | null;
   prescribedBy: string | null;
   notes: string | null;
   isActive: boolean;
-  createdAt: string;
+  createdAt: Date;
 }>[] = [
   { header: '薬品名', accessor: 'name' },
   { header: '用量', accessor: 'dosage' },
@@ -168,13 +168,13 @@ export const medicationColumns: CsvColumn<{
  */
 export const testResultColumns: CsvColumn<{
   testName: string;
-  testDate: string;
+  testDate: Date;
   result: string | null;
   unit: string | null;
   referenceRange: string | null;
   facilityName: string | null;
   notes: string | null;
-  createdAt: string;
+  createdAt: Date;
 }>[] = [
   { header: '検査項目名', accessor: 'testName' },
   { header: '検査日', accessor: (item) => formatDate(item.testDate) },
@@ -193,10 +193,10 @@ export const medicalRecordColumns: CsvColumn<{
   recordType: string;
   title: string;
   content: string | null;
-  recordDate: string;
+  recordDate: Date;
   facilityName: string | null;
   doctorName: string | null;
-  createdAt: string;
+  createdAt: Date;
 }>[] = [
   { header: '記録タイプ', accessor: (item) => getRecordTypeLabel(item.recordType) },
   { header: 'タイトル', accessor: 'title' },

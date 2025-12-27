@@ -2,7 +2,7 @@ import { db } from '@/lib/db';
 import { auditLog } from '@/lib/db/schema';
 import { headers } from 'next/headers';
 
-export type AuditAction = 'create' | 'read' | 'update' | 'delete';
+export type AuditAction = 'create' | 'read' | 'update' | 'delete' | 'export';
 
 export type AuditResourceType = 
   | 'medication'

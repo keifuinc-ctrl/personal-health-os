@@ -411,8 +411,10 @@ cd apps/web && pnpm dev
 - [ ] **リスク予測（基本）**
 - [ ] **予防計画・運動計画（基本）**
 - [ ] **分析履歴**
-- [ ] **AI分析エンジン連携**
-  - [ ] AI Gateway連携（環境変数設定は手動作業 - 下記手順書参照）
+- [x] **AI分析エンジン連携**
+  - [x] AI Gateway連携（環境変数設定は手動作業 - 下記手順書参照）
+  - [x] `lib/services/ai-gateway.ts` の作成
+  - [x] `lib/services/ai-analysis.ts` の作成
   - [ ] リトライ/失敗時のUX
 - [ ] **リスク予測の精度向上**
   - [ ] 外部カルテデータを活用した精度向上
@@ -430,8 +432,9 @@ cd apps/web && pnpm dev
 - [ ] **グループ作成・参加**（招待制含む）
 - [ ] **投稿**
 - [ ] **検索・フィルター・ソート**
-- [ ] **AIマッチング（基本実装）**（集計データベースのマッチングアルゴリズム）
-  - [ ] AI Gateway連携（環境変数設定は手動作業 - 下記手順書参照）
+- [x] **AIマッチング（基本実装）**（集計データベースのマッチングアルゴリズム）
+  - [x] AI Gateway連携（環境変数設定は手動作業 - 下記手順書参照）
+  - [x] `lib/services/group.ts` の作成（マッチングアルゴリズム実装）
 - [ ] **支援事業所検索機能**
   - [ ] 支援事業所データベースの構築（介護施設、居宅介護支援、地域包括、デイサービス、訪問看護、訪問介護、相談支援事業、放課後デイ、共同生活援助、老人ホーム等）（`care_facility`テーブル）
   - [ ] 基本情報（年齢、住所など）を元にしたマッチング機能（`/api/beneficiary/care-facilities`）
@@ -1129,9 +1132,9 @@ GitHubリポジトリと連携している場合、`main`ブランチにプッ�
   - [ ] SS-MIX2対応
   - [ ] レセプト電算対応
 
-- [ ] **AI Gateway連携の完成**
-  - [ ] AI Gateway API連携
-  - [ ] AI分析エンジンとの連携
+- [x] **AI Gateway連携の完成**
+  - [x] AI Gateway API連携（`lib/services/ai-gateway.ts`）
+  - [x] AI分析エンジンとの連携（`lib/services/ai-analysis.ts`）
 
 #### 運営保守タスク
 
@@ -1545,32 +1548,185 @@ export const auth = betterAuth({
 
 #### ステップ2: Cloudflare AI Gatewayのセットアップ（オプションAの場合）
 
-**重要**: Cloudflare AI Gatewayは、APIトークンではなく、ダッシュボードで直接有効化するサービスです。
+**参考**: 公式ドキュメント: https://developers.cloudflare.com/ai-gateway/get-started/
 
 1. **Cloudflareアカウントを作成**
    - https://dash.cloudflare.com にアクセス
    - アカウントを作成（無料プランで利用可能）
 
-2. **AI Gatewayを有効化**
+2. **Account IDを確認（最初に確認しておく）**
+   
+   Account IDは、AI GatewayのエンドポイントURLに必要です。以下のいずれかの方法で確認できます:
+   
+   **方法1: 右側サイドバーから確認**
+   - ダッシュボードの任意のページで、画面右側のサイドバーを確認
+   - 「**Account ID**」という項目が表示されている場合、その値をコピー
+   
+   **方法2: ドメイン設定ページから確認**
+   - ダッシュボードで任意のドメインを選択（ドメインがない場合は、まずドメインを追加）
+   - ドメインの概要ページで、右側サイドバーに「**Account ID**」が表示されます
+   
+   **方法3: APIトークン作成画面から確認**
+   - ダッシュボード右上のプロフィールアイコン（人型アイコン）をクリック
+   - 「**My Profile**」を選択
+   - 左側メニューから「**API Tokens**」を選択
+   - このページの右側サイドバーに「**Account ID**」が表示されます
+   
+   **方法4: URLから確認**
+   - ダッシュボードの任意のページのURLを確認
+   - URL形式: `https://dash.cloudflare.com/{account_id}/...`
+   - この`{account_id}`部分がAccount IDです
+
+3. **AI Gatewayを作成**
    - Cloudflareダッシュボードにログイン
-   - 左側のメニューから「Workers & Pages」を選択
-   - 「AI Gateway」タブをクリック
-   - 「Enable AI Gateway」ボタンをクリックして有効化
-   - 有効化後、AI Gatewayのダッシュボードが表示されます
+   - 左側のメニューから「**AI**」を選択
+   - 「**AI Gateway**」をクリック
+   - 「**Create Gateway**」ボタンをクリック
+   - **Gateway名**を入力（64文字以内、例: `my-health-os-gateway`）
+   - 「**Create**」をクリック
+   - 作成後、Gateway一覧画面に戻ります
 
-3. **Account IDを確認**
-   - Cloudflareダッシュボードの右上にある「Account ID」をコピー
-   - または、右側サイドバーの「Workers & Pages」→「Overview」で確認可能
+4. **Gateway名（Gateway IDとして使用）の確認**
+   
+   **重要**: Cloudflare AI Gatewayでは、Gateway IDとして**Gateway名**を使用します。
+   
+   **確認方法**:
+   - AI Gateway一覧画面で、作成したGatewayの**名前**を確認
+   - この名前が、エンドポイントURLの`{gateway_id}`として使用されます
+   - 例: Gateway名が`my-health-os-gateway`の場合、エンドポイントは:
+     ```
+     https://gateway.ai.cloudflare.com/v1/{account_id}/my-health-os-gateway/compat
+     ```
+   
+   **Gateway詳細画面で確認する場合**:
+   - Gateway一覧で、作成したGatewayの名前をクリック
+   - Gateway詳細画面の上部に、Gateway名が表示されます
+   - この画面のURLにもGateway名が含まれています
 
-4. **APIトークンを作成（オプション - Workers AIを使用する場合）**
-   - ダッシュボード右上の「My Profile」→「API Tokens」をクリック
-   - 「Create Token」をクリック
-   - 「Workers AI」テンプレートを選択、または「カスタムトークン」で以下を設定:
-     - **権限**: 
-       - `Account` → `Workers AI` → `Edit`（Workers AIを使用する場合）
-       - `Account` → `AI Gateway` → `Read`（監視のみの場合）
-   - 「Continue to summary」→「Create Token」をクリック
-   - **表示されたトークンをコピー**（一度しか表示されません）
+5. **プロバイダー認証の設定（3つのオプションから選択）**
+   
+   AI Gatewayを使用してAIプロバイダー（OpenAI、Anthropic、Google AI Studioなど）にアクセスするには、以下のいずれかの方法で認証を設定します:
+   
+   **オプションA: Request Headers（最も簡単・推奨）**
+   
+   この方法では、コード内でリクエストヘッダーにプロバイダーのAPIキーを含めます。
+   
+   **設定手順**:
+   - 特別な設定は不要です（Gateway作成のみでOK）
+   - コード内で、通常通りプロバイダーのAPIキーをリクエストヘッダーに含めます
+   - 例: `Authorization: Bearer <OPENAI_API_KEY>`
+   - この方法が最も簡単で、既存のコードを最小限の変更で使用できます
+   - **推奨**: 初心者の方はこの方法から始めることをお勧めします
+   
+   **オプションB: BYOK（Bring Your Own Keys）**
+   
+   CloudflareにAPIキーを保存し、AI Gatewayが自動的に使用します。
+   
+   **注意**: BYOKの設定は、Gateway詳細画面の「**Settings**」タブには表示されません。以下のいずれかの方法で設定可能です:
+   
+   - **方法1**: Gateway作成時に設定（Gateway作成画面でAPIキーを入力するオプションがある場合）
+   - **方法2**: Cloudflare API経由で設定（上級者向け）
+   - **方法3**: 公式ドキュメントを参照: https://developers.cloudflare.com/ai-gateway/configuration/bring-your-own-keys/
+   
+   **推奨**: 初心者の方は、まずオプションA（Request Headers）を使用し、必要に応じてBYOKを検討してください。
+   
+   **オプションC: Unified Billing（Cloudflare経由で請求）**
+   
+   Cloudflareの請求システムを使用してプロバイダーに支払います。
+   
+   **設定手順**:
+   - Gateway詳細画面の「**Settings**」タブには表示されません
+   - Cloudflareアカウントにクレジットを追加する必要があります
+   - この方法は設定が複雑な場合があるため、上級者向けです
+   - 詳細: https://developers.cloudflare.com/ai-gateway/features/unified-billing/
+   
+   **推奨**: 初心者の方は、まずオプションA（Request Headers）を使用してください。
+
+6. **Gateway設定（Settings画面の各セクション）**
+   
+   Gateway詳細画面の「**Settings**」タブには、以下のセクションが表示されます:
+   
+   **6-1. Collect logs（ログ収集）**
+   - リクエストとレスポンスのペイロード（プロンプト、レスポンス、プロバイダー、タイムスタンプ、ステータス）を保存
+   - デフォルトの上限: 10,000,000件
+   - 「Automatically delete: Delete the oldest logs」を有効にすると、上限に達した際に古いログが自動削除されます
+   - ログのエクスポート: 「Exporting AI Gateway Logs」セクションから、Logpushを使用して外部ストレージにエクスポート可能
+   
+   **6-2. Cached Responses（キャッシュレスポンス）**
+   - キャッシュからリクエストを提供することで、コスト削減とレスポンス速度向上を実現
+   - デフォルト: 5分より古いキャッシュされたリクエストを自動的にクリア
+   - 「change」ボタンから設定を変更可能
+   
+   **6-3. Rate limit requests（レート制限）**
+   - トラフィックを制御して、支出を制限したり、不正な活動を防ぐためにリクエストを制限
+   - デフォルト: 1分間の固定期間で50リクエストを超える場合にトラフィックをスロットル
+   - 「change」ボタンから設定を変更可能
+   
+   **6-4. Authenticated Gateway（認証付きゲートウェイ）**
+   
+   **注意**: 認証付きゲートウェイは、Gatewayへのアクセス自体を保護する機能です。プロバイダー認証とは別の設定です。
+   
+   **設定手順**:
+   1. 「**Authenticated Gateway**」セクションを確認
+   2. 「**Create an authentication token**」リンクをクリック（または「change」ボタン）
+   3. 認証トークンを作成すると、各リクエストにCloudflare APIトークンが必要になります
+   
+   **APIトークンを作成する場合**:
+   1. 「**Create an authentication token**」をクリック
+   2. または、ダッシュボード右上のプロフィールアイコン（人型アイコン）→「**My Profile**」→「**API Tokens**」から作成
+   3. 「**Create Token**」をクリック
+   4. 「**カスタムトークン**」を選択
+   5. トークン名を入力（例: `AI Gateway Token`）
+   6. 権限を設定:
+      - 「**Account**」を展開
+      - 「**AI Gateway**」を展開
+      - 「**Read**」（読み取りのみ）または「**Edit**」（編集も可能）を選択
+   7. 「**Continue to summary**」をクリック
+   8. 「**Create Token**」をクリック
+   9. **表示されたトークンを必ずコピーして保存**（一度しか表示されません）
+   
+   **注意**: 認証付きゲートウェイを使用しない場合（認証なしゲートウェイ）は、この設定は不要です。認証なしゲートウェイでも、プロバイダー認証（オプションA、B、C）は使用できます。
+   
+   **6-5. Otel Integration（OpenTelemetry統合）**
+   - OpenTelemetryエンドポイントにトレースデータを自動的に報告するように設定
+   - 上級者向けの機能です
+   
+   **6-6. Delete a gateway（ゲートウェイの削除）**
+   - ゲートウェイを削除する機能（削除は元に戻せません）
+   
+   **APIトークンを作成する場合**:
+   1. ダッシュボード右上のプロフィールアイコン（人型アイコン）をクリック
+   2. 「**My Profile**」を選択
+   3. 左側メニューから「**API Tokens**」を選択
+   4. 「**Create Token**」をクリック
+   5. 「**カスタムトークン**」を選択
+   6. トークン名を入力（例: `AI Gateway Token`）
+   7. 権限を設定:
+      - 「**Account**」を展開
+      - 「**AI Gateway**」を展開
+      - 「**Read**」（読み取りのみ）または「**Edit**」（編集も可能）を選択
+   8. 「**Continue to summary**」をクリック
+   9. 「**Create Token**」をクリック
+   10. **表示されたトークンを必ずコピーして保存**（一度しか表示されません）
+   
+   **注意**: 認証付きゲートウェイを使用しない場合（認証なしゲートウェイ）は、この手順は不要です。認証なしゲートウェイでも、プロバイダー認証（オプションA、B、C）は使用できます。
+
+7. **エンドポイントURLの確認**
+   
+   作成したGatewayのエンドポイントURLは以下の形式です:
+   
+   ```
+   https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_name}/compat
+   ```
+   
+   **例**:
+   - Account ID: `abc123def456`
+   - Gateway名: `my-health-os-gateway`
+   - エンドポイント: `https://gateway.ai.cloudflare.com/v1/abc123def456/my-health-os-gateway/compat`
+   
+   **確認方法**:
+   - Gateway詳細画面の「**Overview**」タブまたは「**Settings**」タブに、エンドポイントURLが表示されている場合があります
+   - または、上記の形式に基づいて手動で構築してください
 
 #### ステップ3: 環境変数の設定
 
@@ -1579,33 +1735,160 @@ export const auth = betterAuth({
 
 ```bash
 # Cloudflare AI Gateway設定
-CLOUDFLARE_ACCOUNT_ID=your-account-id-here
-CLOUDFLARE_API_TOKEN=your-api-token-here  # Workers AIを使用する場合のみ必要
+CLOUDFLARE_ACCOUNT_ID=your-account-id-here  # ステップ2-2で取得したAccount ID
+CLOUDFLARE_GATEWAY_NAME=your-gateway-name-here  # ステップ2-3で作成したGateway名（Gateway IDとして使用）
+CLOUDFLARE_API_TOKEN=your-cloudflare-api-token-here  # 認証付きゲートウェイを使用する場合のみ必要（ステップ2-6参照）
 
-# AI Gatewayエンドポイント（自動設定されるため、通常は設定不要）
-# AI_GATEWAY_ENDPOINT=https://gateway.ai.cloudflare.com/v1/{account_id}/...
+# AI Gatewayエンドポイント（オプション - 通常は自動構築されるため不要）
+# エンドポイントURLは、Account IDとGateway名から自動的に構築されます
+# 直接指定したい場合のみ、以下の環境変数を設定してください
+# CLOUDFLARE_AI_GATEWAY_ENDPOINT=https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_name}/compat
+
+# AI プロバイダーAPIキー（Request Headers方式を使用する場合のみ必要）
+# オプションB（BYOK）またはオプションC（Unified Billing）を使用する場合は不要
+OPENAI_API_KEY=your-openai-api-key-here  # OpenAIを使用する場合
+ANTHROPIC_API_KEY=your-anthropic-api-key-here  # Anthropicを使用する場合
+GOOGLE_AI_API_KEY=your-google-ai-api-key-here  # Google AI Studioを使用する場合
 ```
 
-**注意**:
-- `CLOUDFLARE_ACCOUNT_ID`: ステップ2-3で取得したAccount ID
-- `CLOUDFLARE_API_TOKEN`: Workers AIを使用する場合のみ必要（通常のAI Gateway使用時は不要）
-- AI Gatewayは、外部AI API（OpenAI、Anthropicなど）へのリクエストをルーティング・監視するためのサービスです
+**環境変数の説明**:
+- `CLOUDFLARE_ACCOUNT_ID`: ステップ2-2で取得したAccount ID（必須）
+  - 例: `abc123def456`
+- `CLOUDFLARE_GATEWAY_NAME`: ステップ2-3で作成したGateway名（必須）
+  - **重要**: Gateway IDとして使用されるのは、Gateway名です
+  - 例: `my-health-os-gateway`
+- `CLOUDFLARE_API_TOKEN`: 認証付きゲートウェイを使用する場合のみ必要
+  - ステップ2-6で作成したAPIトークン
+  - 認証なしゲートウェイを使用する場合は設定不要
+- `CLOUDFLARE_AI_GATEWAY_ENDPOINT`: **オプション**（通常は設定不要）
+  - エンドポイントURLを直接指定したい場合のみ設定
+  - 通常は、Account IDとGateway名から自動的に構築されるため、この環境変数は不要です
+  - 例: `https://gateway.ai.cloudflare.com/v1/abc123def456/my-health-os-gateway/compat`
+- `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_AI_API_KEY`: 
+  - **オプションA（Request Headers方式）**を使用する場合のみ必要
+  - オプションB（BYOK）またはオプションC（Unified Billing）を使用する場合は設定不要
+
+**エンドポイントURLの構築方法**:
+- **推奨**: Account IDとGateway名から動的に構築（コード内で自動生成）
+  - エンドポイントURL: `https://gateway.ai.cloudflare.com/v1/${CLOUDFLARE_ACCOUNT_ID}/${CLOUDFLARE_GATEWAY_NAME}/compat`
+  - この方法により、Account IDやGateway名を変更した際に、エンドポイントURLも自動的に更新されます
+- **代替**: エンドポイントURLを直接`.env`に保存することも可能ですが、通常は推奨されません
+  - Account IDやGateway名を変更した際に、エンドポイントURLも手動で更新する必要があります
+
+**AI Gatewayの役割**:
+- 外部AI API（OpenAI、Anthropic、Google AI Studioなど）へのリクエストをルーティング
+- キャッシング、レート制限、監視、ログ記録などの機能を提供
+- 複数のAIプロバイダーを統一的なエンドポイントで利用可能
 
 #### ステップ4: AI Gatewayクライアントの実装
 
 1. `apps/web/lib/services/ai-gateway.ts` を作成
-   - Cloudflare Workers AI連携のサポート
+
+   **統合方法の選択**:
+   
+   **推奨: Unified API (OpenAI-Compatible) エンドポイント**
+   - OpenAI SDKと互換性があり、既存のコードを最小限の変更で使用可能
+   - 複数のプロバイダーを同じコードで切り替え可能
+   - エンドポイント: `https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/compat`
+   
+   **代替: Provider-specific endpoints**
+   - 各プロバイダーの元のAPIスキーマを維持
+   - エンドポイント: `https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/{provider}`
+   
+2. **実装例（Unified API方式）**:
+
+```typescript
+// apps/web/lib/services/ai-gateway.ts
+import OpenAI from "openai";
+
+const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+const gatewayName = process.env.CLOUDFLARE_GATEWAY_NAME; // Gateway名（Gateway IDとして使用）
+const apiToken = process.env.CLOUDFLARE_API_TOKEN; // 認証付きゲートウェイの場合のみ必要
+const providerApiKey = process.env.OPENAI_API_KEY; // Request Headers方式の場合のみ必要
+
+// エンドポイントURLの構築（推奨: 動的構築）
+// オプション: 環境変数から直接読み取る場合
+// const baseURL = process.env.CLOUDFLARE_AI_GATEWAY_ENDPOINT || 
+//   `https://gateway.ai.cloudflare.com/v1/${accountId}/${gatewayName}/compat`;
+
+// 推奨: Account IDとGateway名から動的に構築
+const baseURL = `https://gateway.ai.cloudflare.com/v1/${accountId}/${gatewayName}/compat`;
+
+// 認証付きゲートウェイを使用する場合
+const client = new OpenAI({
+  apiKey: providerApiKey, // プロバイダーのAPIキー（Request Headers方式の場合）
+  defaultHeaders: apiToken ? {
+    "cf-aig-authorization": `Bearer ${apiToken}`, // Cloudflare APIトークン
+  } : {},
+  baseURL,
+});
+
+// 認証なしゲートウェイを使用する場合
+// const client = new OpenAI({
+//   apiKey: providerApiKey, // Request Headers方式の場合のみ必要
+//   baseURL,
+// });
+
+// BYOKまたはUnified Billingを使用する場合（プロバイダーAPIキー不要）
+// const client = new OpenAI({
+//   apiKey: apiToken || "dummy", // 認証付きゲートウェイの場合のみCloudflare APIトークン
+//   defaultHeaders: apiToken ? {
+//     "cf-aig-authorization": `Bearer ${apiToken}`,
+//   } : {},
+//   baseURL,
+// });
+
+// 使用例: 複数のプロバイダーを切り替え可能
+export async function analyzeHealthData(prompt: string, provider: 'openai' | 'anthropic' | 'google' = 'openai') {
+  const modelMap = {
+    openai: 'openai/gpt-4o-mini',
+    anthropic: 'anthropic/claude-sonnet-4-5',
+    google: 'google-ai-studio/gemini-2.5-flash',
+  };
+
+  try {
+    const response = await client.chat.completions.create({
+      model: modelMap[provider],
+      messages: [{ role: "user", content: prompt }],
+    });
+    
+    return response.choices[0]?.message?.content || null;
+  } catch (error) {
+    console.error('AI Gateway error:', error);
+    // フォールバック処理（ルールベース分析など）
+    throw error;
+  }
+}
+```
+
+3. **機能要件**:
    - 健康データ分析とマッチングスコア計算機能
+   - 複数のAIプロバイダー対応（OpenAI、Anthropic、Google AI Studioなど）
    - フォールバック機能（AI Gateway利用不可時のルールベース処理）
-2. AI Gateway APIを呼び出す関数を実装
+   - エラーハンドリングとリトライ機能
+   - レート制限対応
 
 #### ステップ5: AI分析サービスの更新
 
 1. `apps/web/lib/services/ai-analysis.ts` を更新
 2. AI Gateway連携によるAI分析機能を追加
 3. 集計データからAI Gateway入力への変換関数を追加
+4. エラーハンドリングとフォールバック機能を実装
 
-**注意**: AI Gatewayが利用できない場合は、自動的にルールベースの分析にフォールバックします。
+**重要な注意事項**:
+
+- **フォールバック処理**: AI Gatewayが利用できない場合は、自動的にルールベースの分析にフォールバックします
+- **データプライバシー**: AI Gatewayに送信するデータは、個人識別可能情報（PII）を含まない集計データのみとします（AGENTS.mdの原則に従う）
+- **レート制限**: AI Gatewayのレート制限機能を活用して、API呼び出しを制御します
+- **キャッシング**: AI Gatewayのキャッシング機能により、同じリクエストのコスト削減とレスポンス速度向上が可能です
+- **監視**: AI GatewayダッシュボードでAPI使用量、レイテンシー、エラー率を監視できます
+
+**参考リンク**:
+- [AI Gateway公式ドキュメント](https://developers.cloudflare.com/ai-gateway/)
+- [Unified API (Chat Completion) ドキュメント](https://developers.cloudflare.com/ai-gateway/usage/chat-completion/)
+- [動的ルーティング（フォールバック、A/Bテスト）](https://developers.cloudflare.com/ai-gateway/features/dynamic-routing/)
+- [キャッシング機能](https://developers.cloudflare.com/ai-gateway/features/caching/)
+- [レート制限機能](https://developers.cloudflare.com/ai-gateway/features/rate-limiting/)
 
 ---
 
