@@ -1,3 +1,5 @@
+// ダイアログコンポーネント
+// shadcn/uiベースの再利用可能なモーダルダイアログコンポーネント（Radix UI使用）
 'use client';
 
 import * as React from 'react';
@@ -6,14 +8,13 @@ import { X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
-const Dialog = DialogPrimitive.Root;
+// Radix UIのDialogプリミティブを直接エクスポート
+const Dialog = DialogPrimitive.Root; // ダイアログのルートコンポーネント
+const DialogTrigger = DialogPrimitive.Trigger; // ダイアログを開くトリガー
+const DialogPortal = DialogPrimitive.Portal; // ポータル（DOMの別の場所にレンダリング）
+const DialogClose = DialogPrimitive.Close; // ダイアログを閉じるボタン
 
-const DialogTrigger = DialogPrimitive.Trigger;
-
-const DialogPortal = DialogPrimitive.Portal;
-
-const DialogClose = DialogPrimitive.Close;
-
+// ダイアログオーバーレイコンポーネント（背景の半透明レイヤー）
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
@@ -29,6 +30,7 @@ const DialogOverlay = React.forwardRef<
 ));
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
+// ダイアログコンテンツコンポーネント（モーダルの本体）
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>

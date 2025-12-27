@@ -1,3 +1,5 @@
+// 薬情報エクスポートAPIルート
+// 薬情報をCSV形式でエクスポートするAPIエンドポイント
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { medication } from '@/lib/db/schema';
@@ -12,6 +14,7 @@ import {
 } from '@/lib/services/export';
 
 // GET /api/beneficiary/medications/export - 薬情報CSVエクスポート
+// 認証済みユーザーの薬情報をCSV形式でダウンロード可能にする
 export async function GET() {
   try {
     const session = await auth.api.getSession({

@@ -1,3 +1,5 @@
+// サインアップページコンポーネント
+// 新規ユーザーがアカウントを作成するためのページ
 'use client';
 
 import { useState } from 'react';
@@ -11,6 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
+// サービスのメリット一覧
+// サインアップページで表示する機能紹介
 const benefits = [
   '健康データを一元管理',
   'AIによるリスク予測',
@@ -18,6 +22,7 @@ const benefits = [
   'チームでの健康習慣化',
 ];
 
+// サインアップページのメインコンポーネント
 export default function SignUpPage() {
   const router = useRouter();
   

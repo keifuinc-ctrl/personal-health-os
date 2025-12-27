@@ -1,3 +1,5 @@
+// 健康計画ページコンポーネント
+// Beneficiary Platform - 健康計画機能のメインページ（健康データ記録、AI分析）
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -36,6 +38,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+// 健康データの型定義
 interface HealthData {
   id: string;
   dataType: string;

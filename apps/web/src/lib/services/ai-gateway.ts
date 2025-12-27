@@ -1,23 +1,21 @@
-/**
- * Cloudflare AI Gateway クライアント
- * 
- * AI Gateway経由で複数のAIプロバイダー（OpenAI、Anthropic、Google AI Studio）に
- * 統一されたインターフェースでアクセスします。
- * 
- * @see https://developers.cloudflare.com/ai-gateway/
- */
+// Cloudflare AI Gateway クライアント
+// AI Gateway経由で複数のAIプロバイダー（OpenAI、Anthropic、Google AI Studio）に
+// 統一されたインターフェースでアクセスします
+// @see https://developers.cloudflare.com/ai-gateway/
 import OpenAI from 'openai';
 
 // 環境変数から設定を取得
-const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-const gatewayName = process.env.CLOUDFLARE_GATEWAY_NAME;
+// Cloudflare AI Gatewayの設定に必要な環境変数
+const accountId = process.env.CLOUDFLARE_ACCOUNT_ID; // CloudflareアカウントID
+const gatewayName = process.env.CLOUDFLARE_GATEWAY_NAME; // AI Gateway名
 const apiToken = process.env.CLOUDFLARE_API_TOKEN; // 認証付きゲートウェイの場合のみ必要
-const providerApiKey = process.env.OPENAI_API_KEY; // Request Headers方式の場合のみ必要
+const providerApiKey = process.env.OPENAI_API_KEY; // Request Headers方式の場合のみ必要（プロバイダーのAPIキー）
 
 // サポートするAIプロバイダー
 export type AIProvider = 'openai' | 'anthropic' | 'google';
 
 // プロバイダーごとのモデルマッピング
+// AI Gatewayで使用するモデル名を定義
 const MODEL_MAP: Record<AIProvider, string> = {
   openai: 'openai/gpt-4o-mini',
   anthropic: 'anthropic/claude-sonnet-4-5',

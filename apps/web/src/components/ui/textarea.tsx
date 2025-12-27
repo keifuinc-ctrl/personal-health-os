@@ -1,9 +1,13 @@
+// テキストエリアコンポーネント
+// shadcn/uiベースの再利用可能なテキストエリアコンポーネント
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
+// テキストエリアのプロップ型定義
 export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
+// テキストエリアコンポーネント
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, ...props }, ref) => {
     return (

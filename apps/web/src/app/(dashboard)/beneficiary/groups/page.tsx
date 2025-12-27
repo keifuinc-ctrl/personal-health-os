@@ -1,3 +1,5 @@
+// チーム&地域包括ケアページコンポーネント
+// Beneficiary Platform - チーム&地域包括ケア機能のメインページ（グループ、支援事業所）
 'use client';
 
 import { motion } from 'framer-motion';
@@ -15,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
+// 参加中のグループ（プレースホルダーデータ）
 const myGroups = [
   {
     id: '1',
@@ -34,6 +37,8 @@ const myGroups = [
   },
 ];
 
+// おすすめグループ（プレースホルダーデータ）
+// AIマッチング機能で推奨されるグループ
 const recommendedGroups = [
   {
     id: '3',

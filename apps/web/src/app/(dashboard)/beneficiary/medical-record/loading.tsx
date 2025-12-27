@@ -1,3 +1,5 @@
+// 自分カルテページのローディングコンポーネント
+// データ読み込み中に表示されるスケルトンUI
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 

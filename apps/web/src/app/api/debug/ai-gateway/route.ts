@@ -1,15 +1,12 @@
-/**
- * AI Gateway設定確認用デバッグエンドポイント
- * 
- * GET /api/debug/ai-gateway
- * 
- * 本番環境では無効化またはアクセス制限を設けてください
- */
+// AI Gateway設定確認用デバッグエンドポイント
+// GET /api/debug/ai-gateway
+// AI Gatewayの設定状態を確認するためのデバッグ用API
+// 本番環境では無効化またはアクセス制限を設けてください
 import { NextResponse } from 'next/server';
 import { getAIGatewayInfo, isAIGatewayConfigured } from '@/lib/services/ai-gateway';
 
 export async function GET() {
-  // 本番環境では無効化
+  // 本番環境では無効化（セキュリティ対策）
   if (process.env.NODE_ENV === 'production') {
     return NextResponse.json(
       { error: 'This endpoint is disabled in production' },

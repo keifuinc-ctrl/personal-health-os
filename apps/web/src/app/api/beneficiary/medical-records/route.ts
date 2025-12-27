@@ -1,3 +1,5 @@
+// 診療記録APIルート
+// 診療記録のCRUD操作を提供するAPIエンドポイント
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { medicalRecord } from '@/lib/db/schema';
@@ -8,6 +10,7 @@ import { createMedicalRecordSchema } from '@/lib/validations/medical-record';
 import { headers } from 'next/headers';
 
 // GET /api/beneficiary/medical-records - 診療記録一覧取得（検索・フィルター対応）
+// クエリパラメータ: search（検索文字列）、recordType（記録タイプ）
 export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({

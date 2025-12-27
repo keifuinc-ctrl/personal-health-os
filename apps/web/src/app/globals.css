@@ -1,8 +1,12 @@
+/* グローバルCSSファイル */
+/* Tailwind CSSの設定とカスタムCSS変数を定義 */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ベースレイヤー（CSS変数の定義） */
 @layer base {
+  /* ライトモード用のCSS変数（デフォルト） */
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -26,6 +30,7 @@
     --radius: 0.75rem;
   }
 
+  /* ダークモード用のCSS変数 */
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;

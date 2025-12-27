@@ -1,13 +1,8 @@
-/**
- * AI分析サービス
- * 
- * 健康データの分析機能を提供します。
- * AI Gateway連携が利用可能な場合はAI分析を実行し、
- * 利用不可の場合はルールベースの分析にフォールバックします。
- * 
- * @see AGENTS.md - AI原則に従い、PIIを含まない集計データのみを送信
- */
-
+// AI分析サービス
+// 健康データの分析機能を提供します
+// AI Gateway連携が利用可能な場合はAI分析を実行し、
+// 利用不可の場合はルールベースの分析にフォールバックします
+// @see AGENTS.md - AI原則に従い、PIIを含まない集計データのみを送信
 import { db } from '@/lib/db';
 import { healthData, testResult, medication, medicalRecord, riskPrediction } from '@/lib/db/schema';
 import { eq, desc, and, gte } from 'drizzle-orm';
@@ -15,6 +10,7 @@ import { analyzeHealthData, isAIGatewayConfigured, AIProvider } from './ai-gatew
 import { logSuccess, logFailure } from './audit-log';
 
 // 分析結果の型定義
+// AI分析またはルールベース分析の結果を格納
 export interface HealthAnalysisResult {
   summary: string;
   insights: string[];
@@ -25,6 +21,7 @@ export interface HealthAnalysisResult {
 }
 
 // 集計データの型定義（PIIを含まない）
+// 個人を特定できる情報（PII）を除外し、匿名化された集計データのみをAIに送信
 export interface AggregatedHealthData {
   healthMetrics: {
     dataType: string;

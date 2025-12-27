@@ -1,3 +1,5 @@
+// ログインページコンポーネント
+// 既存ユーザーがログインするためのページ
 'use client';
 
 import { Suspense, useState } from 'react';
@@ -11,6 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
+// ログインフォームコンポーネント
+// SuspenseでラップしてuseSearchParamsを使用
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();

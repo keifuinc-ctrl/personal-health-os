@@ -1,3 +1,5 @@
+// 薬情報APIルート
+// 薬情報のCRUD操作を提供するAPIエンドポイント
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { medication } from '@/lib/db/schema';
@@ -8,6 +10,7 @@ import { createMedicationSchema } from '@/lib/validations/medication';
 import { headers } from 'next/headers';
 
 // GET /api/beneficiary/medications - 薬情報一覧取得（検索・フィルター対応）
+// クエリパラメータ: search（検索文字列）、isActive（服用中フラグ）
 export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({

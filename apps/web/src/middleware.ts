@@ -1,52 +1,61 @@
+// ミドルウェア設定
+// リクエストごとに認証チェックを行い、適切なページにリダイレクト
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Protected routes that require authentication
+// 認証が必要なルート（保護されたルート）
+// これらのルートにアクセスするにはログインが必要
 const protectedRoutes = ['/beneficiary'];
 
-// Auth routes (redirect to dashboard if already logged in)
+// 認証関連のルート（ログイン済みの場合はダッシュボードにリダイレクト）
+// ログイン済みユーザーが再度ログインページにアクセスした場合の処理
 const authRoutes = ['/login', '/signup'];
 
+// ミドルウェア関数
+// すべてのリクエストに対して実行され、認証チェックとリダイレクトを処理
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Check if the route is protected
+  // 現在のルートが保護されたルートかどうかをチェック
   const isProtectedRoute = protectedRoutes.some((route) =>
     pathname.startsWith(route)
   );
   
-  // Check if the route is an auth route
+  // 現在のルートが認証関連のルートかどうかをチェック
   const isAuthRoute = authRoutes.some((route) =>
     pathname.startsWith(route)
   );
   
-  // Get session token from cookies
+  // クッキーからセッショントークンを取得
   const sessionToken = request.cookies.get('better-auth.session_token')?.value;
   
-  // If accessing protected route without session, redirect to login
+  // 保護されたルートにセッションなしでアクセスした場合、ログインページにリダイレクト
   if (isProtectedRoute && !sessionToken) {
     const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('callbackUrl', pathname);
+    loginUrl.searchParams.set('callbackUrl', pathname); // ログイン後に元のページに戻るためのURLを保存
     return NextResponse.redirect(loginUrl);
   }
   
-  // If accessing auth route with session, redirect to dashboard
+  // 認証関連のルートにセッションありでアクセスした場合、ダッシュボードにリダイレクト
   if (isAuthRoute && sessionToken) {
     return NextResponse.redirect(new URL('/beneficiary/medical-record', request.url));
   }
   
+  // 上記の条件に該当しない場合は、そのままリクエストを通過
   return NextResponse.next();
 }
 
+// ミドルウェアの適用範囲を設定
+// どのパスに対してミドルウェアを実行するかを指定
 export const config = {
   matcher: [
     /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     * - api routes (handled separately)
+     * すべてのリクエストパスに適用（以下のパスを除く）:
+     * - _next/static (静的ファイル)
+     * - _next/image (画像最適化ファイル)
+     * - favicon.ico (ファビコン)
+     * - public folder (パブリックフォルダ)
+     * - api routes (APIルートは別途処理)
      */
     '/((?!_next/static|_next/image|favicon.ico|public|api).*)',
   ],

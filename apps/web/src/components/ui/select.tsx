@@ -1,3 +1,5 @@
+// セレクトコンポーネント
+// shadcn/uiベースの再利用可能なドロップダウンセレクトコンポーネント（Radix UI使用）
 'use client';
 
 import * as React from 'react';
@@ -6,11 +8,10 @@ import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
-const Select = SelectPrimitive.Root;
-
-const SelectGroup = SelectPrimitive.Group;
-
-const SelectValue = SelectPrimitive.Value;
+// Radix UIのSelectプリミティブを直接エクスポート
+const Select = SelectPrimitive.Root; // セレクトのルートコンポーネント
+const SelectGroup = SelectPrimitive.Group; // オプションのグループ化
+const SelectValue = SelectPrimitive.Value; // 選択された値を表示
 
 const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,

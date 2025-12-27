@@ -1,9 +1,15 @@
+// 監査ログサービス
+// すべてのデータ操作を記録し、セキュリティとコンプライアンスを確保
 import { db } from '@/lib/db';
 import { auditLog } from '@/lib/db/schema';
 import { headers } from 'next/headers';
 
+// 監査アクションの型定義
+// 記録される操作の種類
 export type AuditAction = 'create' | 'read' | 'update' | 'delete' | 'export';
 
+// リソースタイプの型定義
+// 監査ログが記録されるリソースの種類
 export type AuditResourceType = 
   | 'medication'
   | 'test_result'
@@ -17,6 +23,7 @@ export type AuditResourceType =
   | 'risk_prediction'
   | 'user';
 
+// ログアクションのパラメータ型定義
 interface LogActionParams {
   userId: string | null;
   action: AuditAction;
@@ -27,10 +34,8 @@ interface LogActionParams {
   errorMessage?: string;
 }
 
-/**
- * 監査ログを記録する
- * すべてのデータ操作で使用する
- */
+// 監査ログを記録する
+// すべてのデータ操作で使用する（作成、読み取り、更新、削除、エクスポート）
 export async function logAction({
   userId,
   action,
@@ -64,9 +69,8 @@ export async function logAction({
   }
 }
 
-/**
- * 成功した操作のログを記録するヘルパー
- */
+// 成功した操作のログを記録するヘルパー関数
+// 成功時の監査ログを簡単に記録するためのラッパー
 export async function logSuccess(
   userId: string,
   action: AuditAction,
@@ -84,9 +88,8 @@ export async function logSuccess(
   });
 }
 
-/**
- * 失敗した操作のログを記録するヘルパー
- */
+// 失敗した操作のログを記録するヘルパー関数
+// エラー時の監査ログを簡単に記録するためのラッパー
 export async function logFailure(
   userId: string | null,
   action: AuditAction,

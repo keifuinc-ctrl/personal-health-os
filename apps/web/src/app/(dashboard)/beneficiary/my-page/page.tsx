@@ -1,3 +1,5 @@
+// マイページコンポーネント
+// Beneficiary Platform - マイページ機能のメインページ（設定、通知、プラン管理）
 'use client';
 
 import { motion } from 'framer-motion';
@@ -15,6 +17,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
+// メニュー項目の定義
+// マイページで表示する各種設定へのリンク
 const menuItems = [
   {
     title: '通知設定',

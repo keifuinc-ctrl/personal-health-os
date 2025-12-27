@@ -1,3 +1,5 @@
+// 健康データAPIルート
+// 健康データのCRUD操作を提供するAPIエンドポイント
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { healthData } from '@/lib/db/schema';
@@ -8,6 +10,7 @@ import { createHealthDataSchema } from '@/lib/validations/health-data';
 import { headers } from 'next/headers';
 
 // GET /api/beneficiary/health-data - 健康データ一覧取得
+// クエリパラメータ: dataType（データタイプ）、days（過去N日間）
 export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
@@ -74,6 +77,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/beneficiary/health-data - 健康データ追加
+// リクエストボディ: dataType, value, unit, recordedAt, source, metadata
 export async function POST(request: NextRequest) {
   try {
     const session = await auth.api.getSession({

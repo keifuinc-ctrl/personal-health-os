@@ -1,7 +1,10 @@
+// Tailwind CSS設定ファイル
+// Tailwind CSSのカスタマイズ設定を定義
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  darkMode: ['class'],
+  darkMode: ['class'], // クラスベースのダークモード（手動切り替え）
+  // Tailwindがクラスを検索するパス
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -9,6 +12,7 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // カスタムカラーパレット（shadcn/ui + ヘルスケア専用カラー）
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -43,23 +47,26 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        // Health-specific colors
+        // ヘルスケア専用カラー（自分カルテ、健康計画、チーム&地域包括ケア、マイページ用）
         health: {
-          green: 'hsl(142 76% 36%)',
-          blue: 'hsl(199 89% 48%)',
-          orange: 'hsl(25 95% 53%)',
-          purple: 'hsl(262 83% 58%)',
+          green: 'hsl(142 76% 36%)', // 自分カルテ用（緑）
+          blue: 'hsl(199 89% 48%)', // 健康計画用（青）
+          orange: 'hsl(25 95% 53%)', // マイページ用（オレンジ）
+          purple: 'hsl(262 83% 58%)', // チーム&地域包括ケア用（紫）
         },
       },
+      // 角丸の設定（CSS変数から取得）
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      // フォントファミリーの設定（Geistフォントを使用）
       fontFamily: {
         sans: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-geist-mono)', 'monospace'],
       },
+      // カスタムアニメーションのキーフレーム定義
       keyframes: {
         'fade-in': {
           '0%': { opacity: '0', transform: 'translateY(10px)' },
@@ -74,13 +81,15 @@ const config: Config = {
           '50%': { opacity: '0.5' },
         },
       },
+      // アニメーションの設定
       animation: {
-        'fade-in': 'fade-in 0.5s ease-out',
-        'slide-in': 'slide-in-from-right 0.3s ease-out',
-        pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'fade-in': 'fade-in 0.5s ease-out', // フェードインアニメーション
+        'slide-in': 'slide-in-from-right 0.3s ease-out', // 右からスライドイン
+        pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite', // パルスアニメーション
       },
     },
   },
+  // Tailwind CSSプラグイン（アニメーション機能を追加）
   plugins: [require('tailwindcss-animate')],
 };
 

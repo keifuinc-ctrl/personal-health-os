@@ -1,3 +1,5 @@
+// 薬情報個別操作APIルート
+// 特定の薬情報の取得・更新・削除を提供するAPIエンドポイント
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { medication } from '@/lib/db/schema';
@@ -7,11 +9,13 @@ import { logSuccess, logFailure } from '@/lib/services/audit-log';
 import { updateMedicationSchema } from '@/lib/validations/medication';
 import { headers } from 'next/headers';
 
+// ルートパラメータの型定義（Next.js 15の新しい形式）
 type RouteParams = {
   params: Promise<{ id: string }>;
 };
 
 // GET /api/beneficiary/medications/[id] - 薬情報詳細取得
+// 指定されたIDの薬情報を取得（所有者確認あり）
 export async function GET(
   request: NextRequest,
   { params }: RouteParams
@@ -61,6 +65,7 @@ export async function GET(
 }
 
 // PUT /api/beneficiary/medications/[id] - 薬情報更新
+// 指定されたIDの薬情報を更新（所有者確認あり）
 export async function PUT(
   request: NextRequest,
   { params }: RouteParams
@@ -135,6 +140,7 @@ export async function PUT(
 }
 
 // DELETE /api/beneficiary/medications/[id] - 薬情報削除
+// 指定されたIDの薬情報を削除（所有者確認あり）
 export async function DELETE(
   request: NextRequest,
   { params }: RouteParams

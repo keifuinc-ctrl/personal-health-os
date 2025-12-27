@@ -1,3 +1,5 @@
+// 認証ページ用レイアウトコンポーネント
+// ログイン・サインアップページの共通レイアウト
 import { Sparkles } from 'lucide-react';
 import Link from 'next/link';
 

@@ -1915,226 +1915,739 @@ export async function analyzeHealthData(prompt: string, provider: 'openai' | 'an
 
 ---
 
-### 4. Stripe決済機能の設定手順
+### 4. Stripe決済機能の設定手順（初心者向け）
+
+> **このセクションの目的**: Stripeを使用して、ユーザーが有料プランに加入できる決済機能を実装します。初心者にも分かりやすく、ステップバイステップで解説します。
+
+#### 📚 事前知識
+
+**Stripeとは？**
+- オンライン決済を簡単に実装できるサービスです
+- クレジットカード決済、サブスクリプション（定期課金）などを処理できます
+- 無料でテスト環境が使えます（実際のお金は引き落とされません）
+
+**なぜStripeを使うのか？**
+- セキュリティが高い（PCI DSS準拠）
+- 世界中で使われている実績がある
+- 日本語のドキュメントが充実している
+- テスト環境で安全に試せる
+
+#### 🎯 設定の全体像
+
+Stripe決済機能を実装するには、以下の6つのステップが必要です：
+
+1. **Stripeアカウントの作成** - Stripeのサービスに登録する
+2. **APIキーの取得** - アプリとStripeを連携するための鍵を取得する
+3. **価格プランの作成** - ユーザーが購入できるプラン（例：月額980円）を作成する
+4. **Webhookの設定** - Stripeからアプリに決済完了の通知を受け取る設定
+5. **環境変数の設定** - 取得したキーをアプリに設定する
+6. **動作確認** - 実際に決済が動作するかテストする
+
+---
 
 #### ステップ1: Stripeアカウントの作成
 
-1. https://stripe.com にアクセス
-2. 「Sign up」をクリックしてアカウントを作成
-3. メールアドレスを確認（確認メールが届きます）
-4. ビジネス情報を入力（テスト環境では簡易的な情報でOK）
+**目的**: Stripeのサービスを使うために、アカウントを作成します。
+
+**手順**:
+
+1. **Stripeの公式サイトにアクセス**
+   - ブラウザで https://stripe.com を開く
+   - 右上の「**Sign up**」ボタンをクリック
+
+2. **アカウント情報を入力**
+   - メールアドレスを入力
+   - パスワードを設定
+   - 「**Create account**」をクリック
+
+3. **メールアドレスを確認**
+   - 登録したメールアドレスに確認メールが届きます
+   - メール内のリンクをクリックして確認を完了
+
+4. **ビジネス情報を入力**
+   - テスト環境では、簡易的な情報でOKです
+   - 例：
+     - **ビジネス名**: 「Personal Health OS」
+     - **国**: 「日本」
+     - **業種**: 「ソフトウェア・テクノロジー」
+
+**重要**: テスト環境では実際のお金は引き落とされません。安心して試せます。
+
+---
 
 #### ステップ2: APIキーの取得
 
-1. Stripeダッシュボードにログイン
-2. 「Developers」→「API keys」をクリック
-3. **テストモード**と**本番モード**の切り替えを確認
-   - 開発中は「Test mode」を使用
-   - 本番環境では「Live mode」を使用
-4. 以下のキーをコピー:
-   - **Publishable key**（`pk_test_...` または `pk_live_...`）
-   - **Secret key**（`sk_test_...` または `sk_live_...`）
+**目的**: アプリとStripeを連携するために必要な「鍵」を取得します。
+
+**手順**:
+
+1. **Stripeダッシュボードにログイン**
+   - https://dashboard.stripe.com にアクセス
+   - 作成したアカウントでログイン
+
+2. **APIキーのページを開く**
+   - 左側のメニューから「**Developers**」をクリック
+   - 「**API keys**」をクリック
+
+3. **テストモードと本番モードを確認**
+   - 画面右上に「**Test mode**」と「**Live mode**」の切り替えボタンがあります
+   - **開発中は「Test mode」を使用**してください（実際のお金は引き落とされません）
+   - **本番環境では「Live mode」を使用**してください（実際の決済が行われます）
+
+4. **APIキーをコピー**
+   - **Publishable key**（`pk_test_...` で始まる文字列）をコピー
+     - これは公開しても安全なキーです（ブラウザ側で使用）
+   - **Secret key**（`sk_test_...` で始まる文字列）をコピー
+     - **重要**: これは秘密のキーです。他人に見せないでください（サーバー側でのみ使用）
+
+**注意**: Secret keyは一度しか表示されません。必ず安全な場所に保存してください。
+
+---
 
 #### ステップ3: 価格プランの作成
 
-1. Stripeダッシュボードで「Products」→「Add product」をクリック
-2. 製品情報を入力:
-   - **Name**: 「アドバイザープラン」
-   - **Description**: 「高度な分析とサポート」
-3. 「Pricing」セクションで:
-   - **Pricing model**: 「Standard pricing」
-   - **Price**: `980`（日本円）
-   - **Billing period**: 「Monthly」
-4. 「Save product」をクリック
-5. 作成された**Price ID**（`price_...`）をコピー
+**目的**: ユーザーが購入できるプラン（例：月額980円のアドバイザープラン）を作成します。
+
+**手順**:
+
+1. **製品作成ページを開く**
+   - Stripeダッシュボードの左側メニューから「**Products**」をクリック
+   - 「**Add product**」ボタンをクリック
+
+2. **製品情報を入力**
+   - **Name**（製品名）: 「アドバイザープラン」
+   - **Description**（説明）: 「高度な分析とサポート」
+
+3. **価格を設定**
+   - 「**Pricing**」セクションで以下を設定：
+     - **Pricing model**: 「**Standard pricing**」を選択
+     - **Price**: `980` を入力（日本円）
+     - **Billing period**: 「**Monthly**」（月額）を選択
+
+4. **製品を保存**
+   - 「**Save product**」ボタンをクリック
+
+5. **Price IDをコピー**
+   - 作成後、製品詳細ページに移動します
+   - 「**Pricing**」セクションに「**Price ID**」（`price_...` で始まる文字列）が表示されます
+   - このPrice IDをコピーして保存してください
+
+**Price IDとは？**
+- 作成した価格プランを識別するためのIDです
+- アプリ内でこのIDを使用して、ユーザーにプランを表示します
+
+---
 
 #### ステップ4: Webhookの設定
 
-1. Stripeダッシュボードで「Developers」→「Webhooks」をクリック
-2. 「Add endpoint」をクリック
-3. エンドポイントURLを入力:
-   - 開発環境: `http://localhost:3001/api/stripe/webhook`（Stripe CLIを使用）
-   - 本番環境: `https://your-app.vercel.app/api/stripe/webhook`
-4. イベントを選択:
-   - `checkout.session.completed`
-   - `customer.subscription.created`
-   - `customer.subscription.updated`
-   - `customer.subscription.deleted`
-   - `invoice.payment_succeeded`
-   - `invoice.payment_failed`
-5. 「Add endpoint」をクリック
-6. **Signing secret**（`whsec_...`）をコピー
+**目的**: Stripeからアプリに「決済が完了しました」という通知を受け取る設定をします。
+
+**Webhookとは？**
+- Stripeが決済完了などのイベントを、アプリに自動的に通知する機能です
+- 例：ユーザーが決済を完了すると、Stripeがアプリに「決済完了」を通知します
+
+**手順**:
+
+1. **Webhook設定ページを開く**
+   - Stripeダッシュボードの左側メニューから「**Developers**」をクリック
+   - 「**Webhooks**」をクリック
+   - 「**Add endpoint**」ボタンをクリック
+
+2. **エンドポイントURLを入力**
+   - **開発環境**: `http://localhost:3001/api/stripe/webhook`
+     - **注意**: 開発環境では、Stripe CLIを使用する必要があります（上級者向け）
+   - **本番環境**: `https://your-app.vercel.app/api/stripe/webhook`
+     - `your-app.vercel.app` の部分を、実際のVercelのURLに置き換えてください
+
+3. **イベントを選択**
+   - 以下のイベントにチェックを入れてください：
+     - `checkout.session.completed` - 決済が完了した時
+     - `customer.subscription.created` - サブスクリプションが作成された時
+     - `customer.subscription.updated` - サブスクリプションが更新された時
+     - `customer.subscription.deleted` - サブスクリプションが削除された時
+     - `invoice.payment_succeeded` - 支払いが成功した時
+     - `invoice.payment_failed` - 支払いが失敗した時
+
+4. **エンドポイントを追加**
+   - 「**Add endpoint**」ボタンをクリック
+
+5. **Signing secretをコピー**
+   - エンドポイント作成後、「**Signing secret**」（`whsec_...` で始まる文字列）が表示されます
+   - このSigning secretをコピーして保存してください
+   - **重要**: この値は、Webhookのリクエストが本当にStripeから来たことを確認するために使用します
+
+**開発環境での注意**:
+- 開発環境（`localhost`）では、Stripe CLIを使用してWebhookを転送する必要があります
+- 詳細は [Stripe CLI ドキュメント](https://stripe.com/docs/stripe-cli) を参照してください
+
+---
 
 #### ステップ5: 環境変数の設定
 
-**開発環境**（`apps/web/.env.local`）:
+**目的**: 取得したAPIキーやPrice IDを、アプリが使えるように設定します。
+
+**環境変数とは？**
+- アプリの設定情報を保存する仕組みです
+- 機密情報（APIキーなど）をコードに直接書かずに、環境変数として管理します
+
+**開発環境の設定**（`apps/web/.env.local`）:
+
+1. `apps/web/.env.local` ファイルを開く（存在しない場合は作成）
+2. 以下の環境変数を追加：
+
 ```bash
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_PUBLISHABLE_KEY=pk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_ADVISOR_PRICE_ID=price_...
+# Stripe APIキー（テストモード）
+STRIPE_SECRET_KEY=sk_test_YOUR_SECRET_KEY_HERE
+STRIPE_PUBLISHABLE_KEY=pk_test_YOUR_PUBLISHABLE_KEY_HERE
+
+# Stripe Webhook設定
+STRIPE_WEBHOOK_SECRET=whsec_YOUR_WEBHOOK_SECRET_HERE
+
+# Stripe価格プランID
+STRIPE_ADVISOR_PRICE_ID=price_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-**本番環境**（Vercelの環境変数）:
+**本番環境の設定**（Vercelの環境変数）:
+
+1. Vercelダッシュボードにログイン
+2. プロジェクトを選択
+3. 「**Settings**」→「**Environment Variables**」をクリック
+4. 以下の環境変数を追加（**Live mode**のキーを使用）：
+
 ```bash
-STRIPE_SECRET_KEY=sk_live_...
-STRIPE_PUBLISHABLE_KEY=pk_live_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_ADVISOR_PRICE_ID=price_...
+# Stripe APIキー（本番モード）
+STRIPE_SECRET_KEY=sk_live_YOUR_SECRET_KEY_HERE
+STRIPE_PUBLISHABLE_KEY=pk_live_YOUR_PUBLISHABLE_KEY_HERE
+
+# Stripe Webhook設定
+STRIPE_WEBHOOK_SECRET=whsec_YOUR_WEBHOOK_SECRET_HERE
+
+# Stripe価格プランID
+STRIPE_ADVISOR_PRICE_ID=price_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 **重要**: 
-- テストモードと本番モードで異なるキーを使用します
-- 本番環境では必ず「Live mode」のキーを使用してください
+- **テストモード**（`sk_test_...`, `pk_test_...`）と**本番モード**（`sk_live_...`, `pk_live_...`）で異なるキーを使用します
+- 本番環境では必ず「**Live mode**」のキーを使用してください
+- 環境変数を追加した後、**Vercelで「Redeploy」をクリック**して再デプロイする必要があります
+
+---
 
 #### ステップ6: 動作確認
 
-1. 開発サーバーを再起動: `pnpm dev`
-2. `/pricing` ページにアクセス
-3. 「アドバイザープラン」の「アップグレード」ボタンをクリック
-4. Stripe Checkoutが表示されることを確認
-5. テストカードで決済をテスト:
-   - カード番号: `4242 4242 4242 4242`
-   - 有効期限: 未来の日付
-   - CVC: 任意の3桁
-   - 郵便番号: 任意
+**目的**: 実際に決済機能が動作するかテストします。
 
-**トラブルシューティング**:
-- Checkoutが表示されない場合: `STRIPE_PUBLISHABLE_KEY` が正しく設定されているか確認
-- Webhookが動作しない場合: Webhook URLが正しく設定されているか、`STRIPE_WEBHOOK_SECRET` が正しいか確認
+**手順**:
+
+1. **開発サーバーを再起動**
+   ```bash
+   pnpm dev
+   ```
+   - 環境変数を変更した場合は、必ずサーバーを再起動してください
+
+2. **価格ページにアクセス**
+   - ブラウザで `http://localhost:3001/pricing` にアクセス
+   - 価格プランが表示されることを確認
+
+3. **決済フローをテスト**
+   - 「アドバイザープラン」の「**アップグレード**」ボタンをクリック
+   - Stripe Checkout（決済画面）が表示されることを確認
+
+4. **テストカードで決済をテスト**
+   - Stripeのテストカードを使用して決済をテストします：
+     - **カード番号**: `4242 4242 4242 4242`
+     - **有効期限**: 未来の日付（例：12/25）
+     - **CVC**: 任意の3桁（例：123）
+     - **郵便番号**: 任意（例：1234567）
+   - 「**支払う**」ボタンをクリック
+   - 決済が成功することを確認
+
+**テストカード一覧**:
+- 成功: `4242 4242 4242 4242`
+- 3Dセキュア認証が必要: `4000 0025 0000 3155`
+- 決済失敗: `4000 0000 0000 0002`
+- 詳細は [Stripe テストカード一覧](https://stripe.com/docs/testing) を参照
+
+---
+
+#### 🔧 トラブルシューティング
+
+**問題1: Checkoutが表示されない**
+
+**原因**: `STRIPE_PUBLISHABLE_KEY` が正しく設定されていない可能性があります。
+
+**解決方法**:
+1. `.env.local` ファイルで `STRIPE_PUBLISHABLE_KEY` が正しく設定されているか確認
+2. サーバーを再起動（`pnpm dev`）
+3. ブラウザのコンソール（F12）でエラーがないか確認
+
+**問題2: Webhookが動作しない**
+
+**原因**: Webhook URLが正しく設定されていない、または `STRIPE_WEBHOOK_SECRET` が間違っている可能性があります。
+
+**解決方法**:
+1. StripeダッシュボードでWebhook URLが正しく設定されているか確認
+2. `.env.local` ファイルで `STRIPE_WEBHOOK_SECRET` が正しいか確認
+3. 開発環境では、Stripe CLIを使用してWebhookを転送する必要があります
+
+**問題3: 決済が完了しない**
+
+**原因**: テストカードの情報が間違っている、またはStripeの設定に問題がある可能性があります。
+
+**解決方法**:
+1. テストカードの情報が正しいか確認（カード番号、有効期限など）
+2. Stripeダッシュボードの「**Payments**」タブで、決済の状態を確認
+3. エラーメッセージを確認して、問題を特定
+
+---
+
+#### 📝 まとめ
+
+Stripe決済機能の設定は、以下の6つのステップで完了します：
+
+1. ✅ Stripeアカウントの作成
+2. ✅ APIキーの取得
+3. ✅ 価格プランの作成
+4. ✅ Webhookの設定
+5. ✅ 環境変数の設定
+6. ✅ 動作確認
+
+**次のステップ**:
+- 決済機能が動作することを確認したら、実際のユーザーに使ってもらう準備が整います
+- 本番環境にデプロイする前に、必ずテスト環境で動作確認を行ってください
 
 ---
 
 ## 8. 現状スナップショット（開発の現在地）
 
-### 実装予定の主要機能
+> **このセクションの目的**: 「今どこまで出来ていて、次に何を埋めるか」を初心者が俯瞰できる状態にします。完了している機能と、これから実装する機能を明確に分けています。
 
-#### Beneficiary Platform基盤
-- [ ] 認証・認可基盤（サインアップ/ログイン/ログアウト、メール認証）
-- [ ] 外部カルテ連携認証（OAuth 2.0、SMART on FHIR）
-- [ ] ユーザーインターフェース（ナビゲーション、レスポンシブデザイン）
+### 📊 開発進捗の全体像
 
-#### Beneficiary Platform コア機能
-- [ ] 自分カルテ（薬情報、受診歴、疾患情報、検査データ、外部カルテ連携）
-- [ ] 健康計画（リスク予測、予防計画、AI分析、ビッグデータ分析）
-- [ ] チーム&地域包括ケア（グループ、投稿、AIマッチング、支援事業所検索）
-- [ ] マイページ（通知、設定、プラン、外部カルテ連携設定）
+Personal Health OSの開発は、**MVP（最小限の機能）フェーズ**を目指して進めています。現在、基本的な機能は実装済みですが、外部カルテ連携や高度なAI分析など、多くの機能がまだ実装待ちです。
 
-#### 外部カルテ連携
-- [ ] FHIR R4対応（FHIR Client実装）
-- [ ] SS-MIX2形式のサポート
-- [ ] HL7形式のサポート
-- [ ] OAuth 2.0 / SMART on FHIR認証
-- [ ] 複数医療機関からのデータ取得
-- [ ] 自動データ同期機能
-- [ ] データ連携履歴の管理
+**進捗率の目安**:
+- **Beneficiary Platform基盤**: 約60%完了
+- **Beneficiary Platform コア機能**: 約40%完了
+- **外部カルテ連携**: 0%完了（未実装）
+- **電子保存の三原則**: 約10%完了（監査ログのみ実装済み）
 
-#### 電子保存の三原則
-- [ ] 真正性：デジタル署名、ハッシュ計算、監査ログ拡張
-- [ ] 見読性：FHIR/SS-MIX2/HL7/XML/PDF/A対応、メタデータ管理
-- [ ] 保存性：バックアップ機能、データ移行機能、整合性チェック
+---
 
-#### 遠隔医療・mHealth対応
-- [ ] ウェアラブルデバイス連携（Apple Health、Google Fit、Fitbit等）
-- [ ] モバイルアプリ対応（PWA、プッシュ通知）
+### ✅ 完了している機能（実装済み）
 
-### 実装予定ファイル一覧
+#### 1. 認証・認可基盤
 
-**スキーマ・マイグレーション**
-- `apps/web/lib/schema.ts` - 外部カルテ連携、電子保存テーブル追加
-- `apps/web/drizzle/0001_external_ehr_schema.sql` - マイグレーションSQL（外部カルテ連携用）
+**完了している機能**:
+- ✅ **サインアップ（新規登録）** - ユーザーがアカウントを作成できる
+- ✅ **ログイン** - 既存ユーザーがログインできる
+- ✅ **ログアウト** - ユーザーがログアウトできる
+- ✅ **セッション管理** - ログイン状態を保持する機能
 
-**認証・外部カルテ連携**
-- `apps/web/lib/services/ehr-connection.ts` - 外部カルテ接続サービス
-- `apps/web/lib/services/fhir-client.ts` - FHIR Client実装
-- `apps/web/lib/services/oauth2.ts` - OAuth 2.0認証サービス
-- `apps/web/lib/services/smart-on-fhir.ts` - SMART on FHIR認証サービス
+**実装ファイル**:
+- `apps/web/src/app/(auth)/signup/page.tsx` - サインアップページ
+- `apps/web/src/app/(auth)/login/page.tsx` - ログインページ
+- `apps/web/src/lib/auth.ts` - 認証設定
+- `apps/web/src/middleware.ts` - 認証チェック（保護されたページへのアクセス制御）
 
-**Beneficiary Platform**
-- `apps/web/app/beneficiary/page.tsx` - ダッシュボード
-- `apps/web/app/beneficiary/medical-record/page.tsx` - 自分カルテ
-- `apps/web/app/beneficiary/health-plan/page.tsx` - 健康計画
-- `apps/web/app/beneficiary/groups/page.tsx` - チーム&地域包括ケア
-- `apps/web/app/beneficiary/my-page/page.tsx` - マイページ
-- `apps/web/app/beneficiary/ehr-connections/page.tsx` - 外部カルテ連携設定
-- `apps/web/app/beneficiary/loading.tsx` - ローディングUI
-- `apps/web/app/api/beneficiary/ehr-connections/route.ts` - 外部カルテ連携API
-- `apps/web/app/api/beneficiary/ehr-sync/route.ts` - データ同期API
+**未実装の機能**:
+- [ ] メール認証（Resend連携が必要）
+- [ ] パスワードリセット機能
 
-**電子保存サービス**
-- `apps/web/lib/services/digital-signature.ts` - 真正性サービス
-- `apps/web/lib/services/backup.ts` - 保存性サービス
-- `apps/web/lib/services/data-migration.ts` - データ移行サービス
-- `apps/web/lib/services/export.ts` - エクスポートサービス（FHIR/SS-MIX2/XML/PDF対応）
+---
 
-**パフォーマンス**
-- `apps/web/lib/swr-config.tsx` - SWRグローバル設定
-- `apps/web/app/loading.tsx` - ルートローディングUI
+#### 2. 自分カルテ機能（基本機能）
+
+**完了している機能**:
+- ✅ **薬情報の記録・管理**
+  - 薬情報の追加、編集、削除
+  - 薬情報の一覧表示
+  - 薬情報の検索・フィルター機能
+  - 薬情報のCSVエクスポート
+- ✅ **病院受診情報の記録・管理**（診療記録として実装）
+  - 受診情報の追加、編集、削除
+  - 受診情報の一覧表示
+  - 受診情報の検索・フィルター機能
+- ✅ **疾患情報の記録・管理**（診療記録として実装）
+  - 疾患情報の追加、編集、削除
+  - 疾患情報の一覧表示
+  - 疾患情報の検索・フィルター機能
+- ✅ **検査データの記録・管理**
+  - 検査データの追加、編集、削除
+  - 検査データの一覧表示
+  - 検査データの検索・フィルター機能
+  - 検査データのCSVエクスポート
+
+**実装ファイル**:
+- `apps/web/src/app/(dashboard)/beneficiary/medical-record/page.tsx` - 自分カルテのメインページ
+- `apps/web/src/app/(dashboard)/beneficiary/medical-record/medications/page.tsx` - 薬情報ページ
+- `apps/web/src/app/(dashboard)/beneficiary/medical-record/records/page.tsx` - 診療記録ページ
+- `apps/web/src/app/(dashboard)/beneficiary/medical-record/tests/page.tsx` - 検査結果ページ
+- `apps/web/src/app/api/beneficiary/medications/route.ts` - 薬情報API
+- `apps/web/src/app/api/beneficiary/medical-records/route.ts` - 診療記録API
+- `apps/web/src/app/api/beneficiary/test-results/route.ts` - 検査結果API
+
+**未実装の機能**:
+- [ ] 外部カルテ連携（FHIR、SS-MIX2、HL7対応）
+- [ ] 外部カルテからの自動データ同期
+- [ ] 検査データのグラフ表示
+- [ ] FHIR形式エクスポート
+- [ ] SS-MIX2形式エクスポート
+- [ ] PDF/A形式エクスポート
+
+---
+
+#### 3. 健康計画機能（基本機能）
+
+**完了している機能**:
+- ✅ **健康データの記録・表示** - 体重、血圧などの健康データを記録・表示できる
+- ✅ **AI分析エンジン連携** - AI Gatewayを使用した健康データ分析
+  - AI Gateway連携（`lib/services/ai-gateway.ts`）
+  - AI分析サービス（`lib/services/ai-analysis.ts`）
+  - ルールベース分析へのフォールバック機能
+
+**実装ファイル**:
+- `apps/web/src/app/(dashboard)/beneficiary/health-plan/page.tsx` - 健康計画ページ
+- `apps/web/src/lib/services/ai-gateway.ts` - AI Gatewayクライアント
+- `apps/web/src/lib/services/ai-analysis.ts` - AI分析サービス
+
+**未実装の機能**:
+- [ ] データ集計処理（異常値検出、統計分析）
+- [ ] リスク予測（1〜10年後のリスク予測）
+- [ ] 予防計画・運動計画の詳細化
+- [ ] 分析履歴の保存・参照
+- [ ] ビッグデータ分析機能
+
+---
+
+#### 4. チーム&地域包括ケア機能（基本機能）
+
+**完了している機能**:
+- ✅ **AIマッチング（基本実装）** - グループマッチングアルゴリズムの実装
+  - AI Gatewayを使用したマッチングスコア計算
+  - ルールベース計算へのフォールバック機能
+
+**実装ファイル**:
+- `apps/web/src/app/(dashboard)/beneficiary/groups/page.tsx` - グループページ
+- `apps/web/src/lib/services/group.ts` - グループマッチングサービス
+
+**未実装の機能**:
+- [ ] グループ作成・参加機能（招待制含む）
+- [ ] 投稿機能
+- [ ] 検索・フィルター・ソート機能
+- [ ] 支援事業所検索機能
+
+---
+
+#### 5. マイページ機能（基本機能）
+
+**完了している機能**:
+- ✅ **プレースホルダーページ** - マイページの基本レイアウト
+
+**実装ファイル**:
+- `apps/web/src/app/(dashboard)/beneficiary/my-page/page.tsx` - マイページ
+
+**未実装の機能**:
+- [ ] 通知機能
+- [ ] 設定機能
+- [ ] プラン管理（Stripe連携）
+- [ ] 外部カルテ連携設定
+
+---
+
+#### 6. UI/UX（基本機能）
+
+**完了している機能**:
+- ✅ **ナビゲーション** - ページ間の移動ができる
+- ✅ **レスポンシブデザイン** - スマートフォンでも表示できる
+- ✅ **ローディング表示** - 各ページにローディングUIを実装
+- ✅ **アニメーション** - framer-motionを使用したトランジション効果
+
+**実装ファイル**:
+- `apps/web/src/app/(dashboard)/layout.tsx` - ダッシュボードレイアウト
 - 各ページの `loading.tsx` ファイル
 
-**設定ファイル**
-- `apps/web/vercel.json` - Vercel Cron設定
-- `apps/web/ENV_SETUP.md` - 環境変数ドキュメント
+**未実装の機能**:
+- [ ] エラー表示の改善
+- [ ] アクセシビリティ対応の強化
+- [ ] 3D要素（必要に応じて）
 
-### 手動作業が必要な項目
+---
 
-1. **データベースマイグレーション実行**
-   - `apps/web/drizzle/0001_external_ehr_schema.sql` をSupabaseで実行
+#### 7. セキュリティ・監査ログ
 
-2. **環境変数設定**
-   - `DIGITAL_SIGNATURE_SECRET` - デジタル署名用シークレット
-   - `EHR_CLIENT_ID`、`EHR_CLIENT_SECRET` - 外部カルテ連携用認証情報
+**完了している機能**:
+- ✅ **監査ログ機能** - すべてのデータ操作を記録
+  - 成功・失敗のログ記録
+  - IPアドレス、ユーザーエージェントの記録
 
-3. **Cronジョブ設定**
-   - Vercelデプロイ後、自動的に `vercel.json` のCron設定が有効化される
+**実装ファイル**:
+- `apps/web/src/lib/services/audit-log.ts` - 監査ログサービス
 
-4. **macOS開発環境設定**
-   - ファイルディスクリプタ制限の引き上げ（セクション6.4参照）
+**未実装の機能**:
+- [ ] デジタル署名機能
+- [ ] 改ざん検知機能（ハッシュ値による整合性チェック）
+- [ ] データ暗号化（通信・保存時）
 
-### これから必要な作業
+---
 
-#### 優先度: 高
+#### 8. CI/CD
 
-1. **外部カルテ連携基盤の実装**
-   - FHIR R4 Client実装
-   - OAuth 2.0 / SMART on FHIR認証
-   - SS-MIX2、HL7形式のサポート
+**完了している機能**:
+- ✅ **GitHub Actions** - 自動テスト・ビルド
+  - Lint（コード品質チェック）
+  - Type Check（型チェック）
+  - Build（ビルド）
 
-2. **Beneficiary Platform コア機能の実装**
-   - 自分カルテ機能（外部カルテ連携含む）
-   - 健康計画機能（ビッグデータ分析含む）
-   - チーム&地域包括ケア機能
-   - マイページ機能（外部カルテ連携設定含む）
+**実装ファイル**:
+- `.github/workflows/ci.yml` - CI/CD設定
 
-3. **電子保存の三原則の実装**
-   - 真正性：デジタル署名、改ざん検知
-   - 見読性：標準フォーマット対応
-   - 保存性：バックアップ、データ移行
+**未実装の機能**:
+- [ ] ユニットテスト（Vitest）
+- [ ] E2Eテスト（Playwright）
 
-#### 優先度: 中
+---
 
-4. **テスト環境の整備**
-   - E2Eテスト（Playwright）の実装
-   - ユニットテスト（Vitest）の実装
-   - CI/CDパイプラインへのテスト統合
+### 🚧 未実装の主要機能
 
-5. **UI/UX改善**
-   - フィードバックに基づくUI改善
-   - アクセシビリティ対応強化
-   - モバイル対応の改善
+#### 1. Beneficiary Platform基盤
 
-6. **セキュリティ強化**
-   - ペネトレーションテスト
-   - セキュリティ監査
-   - 脆弱性スキャン自動化
+**未実装の機能**:
+- [ ] **メール認証** - Resend連携が必要
+- [ ] **外部カルテ連携認証** - OAuth 2.0、SMART on FHIR認証
 
-#### 優先度: 低
+---
 
-7. **機能拡張**
-   - ウェアラブルデバイス連携
-   - PWA対応
-   - 多言語対応
-   - ブロックチェーン技術の統合（真正性強化）
+#### 2. Beneficiary Platform コア機能
+
+**未実装の機能**:
+- [ ] **外部カルテ連携** - FHIR、SS-MIX2、HL7対応
+- [ ] **リスク予測の詳細化** - 1〜10年後のリスク予測、様々な疾患やADLのリスク表示
+- [ ] **予防計画の詳細化** - 疾患別プラン（内科、精神、神経、血液など）
+- [ ] **ビッグデータ分析機能** - 集約データによるアウトカム分析
+- [ ] **グループ機能** - グループ作成・参加、投稿、検索・フィルター
+- [ ] **支援事業所検索機能** - 介護施設、居宅介護支援などの検索
+- [ ] **通知機能** - ユーザーへの通知
+- [ ] **設定機能** - ユーザー設定の管理
+- [ ] **プラン管理** - Stripe連携による有料プラン管理
+
+---
+
+#### 3. 外部カルテ連携
+
+**未実装の機能**:
+- [ ] **FHIR R4対応** - FHIR Client実装
+- [ ] **SS-MIX2形式のサポート** - SS-MIX2形式のインポート/エクスポート
+- [ ] **HL7形式のサポート** - HL7形式のサポート
+- [ ] **OAuth 2.0 / SMART on FHIR認証** - 外部カルテシステムとの認証
+- [ ] **複数医療機関からのデータ取得** - 複数の医療機関と連携
+- [ ] **自動データ同期機能** - 定期的なデータ同期
+- [ ] **データ連携履歴の管理** - 連携履歴の記録・参照
+
+**実装予定ファイル**:
+- `apps/web/src/lib/services/ehr-connection.ts` - 外部カルテ接続サービス
+- `apps/web/src/lib/services/fhir-client.ts` - FHIR Client実装
+- `apps/web/src/lib/services/oauth2.ts` - OAuth 2.0認証サービス
+- `apps/web/src/lib/services/smart-on-fhir.ts` - SMART on FHIR認証サービス
+- `apps/web/src/app/api/beneficiary/ehr-connections/route.ts` - 外部カルテ連携API
+- `apps/web/src/app/api/beneficiary/ehr-sync/route.ts` - データ同期API
+
+---
+
+#### 4. 電子保存の三原則
+
+**未実装の機能**:
+- [ ] **真正性** - デジタル署名、ハッシュ計算による改ざん検知
+- [ ] **見読性** - FHIR/SS-MIX2/HL7/XML/PDF/A対応、メタデータ管理
+- [ ] **保存性** - バックアップ機能、データ移行機能、整合性チェック
+
+**実装予定ファイル**:
+- `apps/web/src/lib/services/digital-signature.ts` - 真正性サービス
+- `apps/web/src/lib/services/backup.ts` - 保存性サービス
+- `apps/web/src/lib/services/data-migration.ts` - データ移行サービス
+- `apps/web/src/lib/services/export.ts` - エクスポートサービス（FHIR/SS-MIX2/XML/PDF対応）
+
+---
+
+#### 5. 遠隔医療・mHealth対応
+
+**未実装の機能**:
+- [ ] **ウェアラブルデバイス連携** - Apple Health、Google Fit、Fitbit等
+- [ ] **モバイルアプリ対応** - PWA、プッシュ通知
+
+---
+
+### 📋 実装予定ファイル一覧
+
+#### スキーマ・マイグレーション
+- `apps/web/src/lib/db/schema.ts` - 外部カルテ連携、電子保存テーブル追加（既存ファイルを拡張）
+- `apps/web/drizzle/0001_external_ehr_schema.sql` - マイグレーションSQL（外部カルテ連携用、新規作成）
+
+#### 認証・外部カルテ連携
+- `apps/web/src/lib/services/ehr-connection.ts` - 外部カルテ接続サービス（新規作成）
+- `apps/web/src/lib/services/fhir-client.ts` - FHIR Client実装（新規作成）
+- `apps/web/src/lib/services/oauth2.ts` - OAuth 2.0認証サービス（新規作成）
+- `apps/web/src/lib/services/smart-on-fhir.ts` - SMART on FHIR認証サービス（新規作成）
+
+#### Beneficiary Platform
+- `apps/web/src/app/(dashboard)/beneficiary/ehr-connections/page.tsx` - 外部カルテ連携設定ページ（新規作成）
+- `apps/web/src/app/api/beneficiary/ehr-connections/route.ts` - 外部カルテ連携API（新規作成）
+- `apps/web/src/app/api/beneficiary/ehr-sync/route.ts` - データ同期API（新規作成）
+
+#### 電子保存サービス
+- `apps/web/src/lib/services/digital-signature.ts` - 真正性サービス（新規作成）
+- `apps/web/src/lib/services/backup.ts` - 保存性サービス（新規作成）
+- `apps/web/src/lib/services/data-migration.ts` - データ移行サービス（新規作成）
+- `apps/web/src/lib/services/export.ts` - エクスポートサービス（既存ファイルを拡張：FHIR/SS-MIX2/XML/PDF対応）
+
+#### パフォーマンス
+- `apps/web/src/lib/swr-config.tsx` - SWRグローバル設定（新規作成、オプション）
+- `apps/web/src/app/loading.tsx` - ルートローディングUI（既存ファイルを拡張）
+
+#### 設定ファイル
+- `apps/web/vercel.json` - Vercel Cron設定（新規作成、オプション）
+- `apps/web/ENV_SETUP.md` - 環境変数ドキュメント（新規作成、オプション）
+
+---
+
+### 🔧 手動作業が必要な項目
+
+以下の項目は、コードを書くだけでは完了せず、手動で設定や実行が必要です。
+
+#### 1. データベースマイグレーション実行
+
+**作業内容**:
+- `apps/web/drizzle/0001_external_ehr_schema.sql` をSupabaseで実行
+- 外部カルテ連携用のテーブルを作成
+
+**実行方法**:
+- Supabase MCP Server経由で実行（推奨）
+- または、Supabase CLI経由で実行
+
+**参考**: セクション4「データベースセットアップ」を参照
+
+---
+
+#### 2. 環境変数設定
+
+**必要な環境変数**:
+- `DIGITAL_SIGNATURE_SECRET` - デジタル署名用シークレット（ランダムな文字列）
+- `EHR_CLIENT_ID`、`EHR_CLIENT_SECRET` - 外部カルテ連携用認証情報（外部カルテシステムから取得）
+
+**設定方法**:
+- 開発環境: `apps/web/.env.local` に追加
+- 本番環境: Vercelの環境変数に追加
+
+**参考**: セクション9「デプロイ・公開手順」を参照
+
+---
+
+#### 3. Cronジョブ設定
+
+**作業内容**:
+- Vercelデプロイ後、自動的に `vercel.json` のCron設定が有効化される
+- 定期的なデータ同期などのバックグラウンド処理を実行
+
+**注意**: `vercel.json` ファイルを作成する必要があります（実装予定ファイル一覧を参照）
+
+---
+
+#### 4. macOS開発環境設定
+
+**作業内容**:
+- ファイルディスクリプタ制限の引き上げ
+
+**参考**: セクション6.4「EMFILE: too many open files（macOS）」を参照
+
+---
+
+### 🎯 これから必要な作業（優先順位順）
+
+#### 優先度: 高（最優先で実装すべき機能）
+
+**1. 外部カルテ連携基盤の実装**
+- **目的**: 医療機関の電子カルテシステムと連携して、患者データを自動取得できるようにする
+- **実装内容**:
+  - FHIR R4 Client実装
+  - OAuth 2.0 / SMART on FHIR認証
+  - SS-MIX2、HL7形式のサポート
+- **重要性**: Beneficiary Platformのコア機能である「自分カルテ」を完成させるために必須
+
+**2. Beneficiary Platform コア機能の実装**
+- **目的**: 4つのコア機能（自分カルテ、健康計画、チーム&地域包括ケア、マイページ）を完成させる
+- **実装内容**:
+  - 自分カルテ機能（外部カルテ連携含む）
+  - 健康計画機能（ビッグデータ分析含む）
+  - チーム&地域包括ケア機能
+  - マイページ機能（外部カルテ連携設定含む）
+- **重要性**: MVPフェーズの完了に必須
+
+**3. 電子保存の三原則の実装**
+- **目的**: 医療記録の法的要件（真正性・見読性・保存性）を満たす
+- **実装内容**:
+  - 真正性：デジタル署名、改ざん検知
+  - 見読性：標準フォーマット対応
+  - 保存性：バックアップ、データ移行
+- **重要性**: 医療情報の取り扱いにおいて法的要件を満たすために必須
+
+---
+
+#### 優先度: 中（MVP完了後に実装）
+
+**4. テスト環境の整備**
+- **目的**: コードの品質を保証し、バグを早期発見する
+- **実装内容**:
+  - E2Eテスト（Playwright）の実装
+  - ユニットテスト（Vitest）の実装
+  - CI/CDパイプラインへのテスト統合
+
+**5. UI/UX改善**
+- **目的**: ユーザーが使いやすいインターフェースを提供する
+- **実装内容**:
+  - フィードバックに基づくUI改善
+  - アクセシビリティ対応強化
+  - モバイル対応の改善
+
+**6. セキュリティ強化**
+- **目的**: セキュリティリスクを最小限に抑える
+- **実装内容**:
+  - ペネトレーションテスト
+  - セキュリティ監査
+  - 脆弱性スキャン自動化
+
+---
+
+#### 優先度: 低（将来の拡張機能）
+
+**7. 機能拡張**
+- **目的**: より便利な機能を追加する
+- **実装内容**:
+  - ウェアラブルデバイス連携（Apple Health、Google Fit、Fitbit等）
+  - PWA対応（オフライン対応）
+  - 多言語対応
+  - ブロックチェーン技術の統合（真正性強化）
+
+---
+
+### 📝 まとめ
+
+**現在の状態**:
+- ✅ 基本的な認証機能（サインアップ、ログイン、ログアウト）
+- ✅ 自分カルテ機能の基本機能（薬情報、診療記録、検査データの記録・管理）
+- ✅ AI分析エンジン連携（AI Gateway）
+- ✅ 監査ログ機能
+- ✅ UI/UXの基本機能（ナビゲーション、レスポンシブデザイン、ローディング表示）
+- ✅ CI/CDパイプライン（GitHub Actions）
+
+**次のステップ**:
+1. **外部カルテ連携基盤の実装**（最優先）
+2. **Beneficiary Platform コア機能の完成**（最優先）
+3. **電子保存の三原則の実装**（最優先）
+
+**初心者へのアドバイス**:
+- まずは「完了している機能」を理解して、どのような機能が実装されているか把握しましょう
+- 「未実装の主要機能」を見て、次に何を実装すべきか理解しましょう
+- 「優先度: 高」の機能から順に実装していくことをお勧めします
 
 ---
 

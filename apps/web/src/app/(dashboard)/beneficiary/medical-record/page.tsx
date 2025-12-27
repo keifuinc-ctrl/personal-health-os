@@ -1,3 +1,5 @@
+// 自分カルテページコンポーネント
+// Beneficiary Platform - 自分カルテ機能のメインページ
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -16,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
+// 最近の記録の型定義
 interface RecentRecord {
   id: string;
   title: string;
@@ -24,6 +27,7 @@ interface RecentRecord {
   type: 'visit' | 'test' | 'medication';
 }
 
+// クイックアクション（よく使う機能へのショートカット）
 const quickActions = [
   {
     title: '診療記録を追加',

@@ -1,3 +1,5 @@
+// 検査結果APIルート
+// 検査結果のCRUD操作を提供するAPIエンドポイント
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { testResult } from '@/lib/db/schema';
@@ -8,6 +10,7 @@ import { createTestResultSchema } from '@/lib/validations/test-result';
 import { headers } from 'next/headers';
 
 // GET /api/beneficiary/test-results - 検査結果一覧取得（検索・フィルター対応）
+// クエリパラメータ: search（検索文字列）、from（開始日）、to（終了日）
 export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({

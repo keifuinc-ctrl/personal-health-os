@@ -1,3 +1,5 @@
+// スイッチコンポーネント
+// shadcn/uiベースの再利用可能なトグルスイッチコンポーネント（Radix UI使用）
 'use client';
 
 import * as React from 'react';
@@ -5,6 +7,7 @@ import * as SwitchPrimitives from '@radix-ui/react-switch';
 
 import { cn } from '@/lib/utils';
 
+// スイッチコンポーネント（ON/OFF切り替え）
 const Switch = React.forwardRef<
   React.ElementRef<typeof SwitchPrimitives.Root>,
   React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>

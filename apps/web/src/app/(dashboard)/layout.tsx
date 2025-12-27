@@ -1,3 +1,5 @@
+// ダッシュボード用レイアウトコンポーネント
+// Beneficiary Platformの共通レイアウト（サイドバー、ナビゲーション、ログアウト機能）
 'use client';
 
 import Link from 'next/link';
@@ -18,6 +20,8 @@ import { signOut } from '@/lib/auth-client';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
+// ナビゲーションメニューの定義
+// 4つのコア機能へのリンク
 const navigation = [
   {
     name: '自分カルテ',
@@ -45,17 +49,19 @@ const navigation = [
   },
 ];
 
+// ダッシュボードレイアウトのメインコンポーネント
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname(); // 現在のパスを取得（アクティブなメニューを判定）
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // モバイルメニューの開閉状態
 
+  // ログアウト処理
   const handleSignOut = async () => {
     await signOut();
-    window.location.href = '/';
+    window.location.href = '/'; // ログアウト後、ホームページにリダイレクト
   };
 
   return (

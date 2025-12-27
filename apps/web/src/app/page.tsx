@@ -1,3 +1,5 @@
+// ホームページコンポーネント
+// Personal Health OSのランディングページを表示します
 'use client';
 
 import Link from 'next/link';
@@ -11,6 +13,8 @@ import {
   Sparkles,
 } from 'lucide-react';
 
+// 機能紹介カードのデータ定義
+// 4つのコア機能（自分カルテ、健康計画、チーム&地域包括ケア、セキュリティ）を表示
 const features = [
   {
     icon: FileHeart,
@@ -42,16 +46,20 @@ const features = [
   },
 ];
 
+// アニメーション設定: コンテナ全体のアニメーション
+// 子要素を順番に表示するための設定
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1,
+      staggerChildren: 0.1, // 子要素を0.1秒間隔で表示
     },
   },
 };
 
+// アニメーション設定: 個別アイテムのアニメーション
+// 各機能カードの表示アニメーション
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
@@ -64,10 +72,12 @@ const itemVariants = {
   },
 };
 
+// ホームページのメインコンポーネント
+// ランディングページ全体のレイアウトとコンテンツを定義
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30">
-      {/* Hero Section */}
+      {/* Hero Section - メインのヒーローセクション（タイトルとCTA） */}
       <header className="relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 -z-10">
