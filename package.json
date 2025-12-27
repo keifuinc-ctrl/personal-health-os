@@ -12,8 +12,14 @@
     "format": "prettier --write ."
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.3",
     "prettier": "^3.2.5",
     "turbo": "^2.3.3"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.4",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-switch": "^1.2.6",
+    "zod": "^3.24.1"
   }
 }
-

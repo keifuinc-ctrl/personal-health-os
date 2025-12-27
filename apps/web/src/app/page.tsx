@@ -175,7 +175,7 @@ export default function HomePage() {
           viewport={{ once: true }}
           className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4"
         >
-          {features.map((feature, index) => (
+          {features.map((feature) => (
             <motion.div
               key={feature.title}
               variants={itemVariants}

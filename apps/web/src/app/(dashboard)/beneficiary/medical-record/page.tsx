@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import {
   FileHeart,
   Pill,
@@ -9,16 +11,25 @@ import {
   Plus,
   LinkIcon,
   ChevronRight,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+interface RecentRecord {
+  id: string;
+  title: string;
+  facility: string;
+  date: string;
+  type: 'visit' | 'test' | 'medication';
+}
 
 const quickActions = [
   {
     title: '診療記録を追加',
     description: '病院の受診記録を手動で追加',
     icon: FileHeart,
-    href: '/beneficiary/medical-record/add',
+    href: '/beneficiary/medical-record/records',
     color: 'text-health-green',
     bgColor: 'bg-health-green/10',
   },
@@ -48,30 +59,6 @@ const quickActions = [
   },
 ];
 
-const recentRecords = [
-  {
-    id: '1',
-    title: '定期健康診断',
-    facility: '○○クリニック',
-    date: '2024年12月15日',
-    type: 'visit',
-  },
-  {
-    id: '2',
-    title: '血液検査結果',
-    facility: '△△病院',
-    date: '2024年12月10日',
-    type: 'test',
-  },
-  {
-    id: '3',
-    title: '処方箋',
-    facility: '○○クリニック',
-    date: '2024年12月5日',
-    type: 'medication',
-  },
-];
-
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -92,6 +79,73 @@ const itemVariants = {
 };
 
 export default function MedicalRecordPage() {
+  const [recentRecords, setRecentRecords] = useState<RecentRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchRecentRecords = useCallback(async () => {
+    try {
+      // 最近の記録を複数のエンドポイントから取得
+      const [medicationsRes, testResultsRes, recordsRes] = await Promise.all([
+        fetch('/api/beneficiary/medications'),
+        fetch('/api/beneficiary/test-results'),
+        fetch('/api/beneficiary/medical-records'),
+      ]);
+
+      const records: RecentRecord[] = [];
+
+      if (medicationsRes.ok) {
+        const data = await medicationsRes.json();
+        data.medications?.slice(0, 3).forEach((med: { id: string; name: string; prescribedBy?: string; createdAt: string }) => {
+          records.push({
+            id: med.id,
+            title: med.name,
+            facility: med.prescribedBy || '未設定',
+            date: new Date(med.createdAt).toLocaleDateString('ja-JP'),
+            type: 'medication',
+          });
+        });
+      }
+
+      if (testResultsRes.ok) {
+        const data = await testResultsRes.json();
+        data.testResults?.slice(0, 3).forEach((test: { id: string; testName: string; facilityName?: string; testDate: string }) => {
+          records.push({
+            id: test.id,
+            title: test.testName,
+            facility: test.facilityName || '未設定',
+            date: new Date(test.testDate).toLocaleDateString('ja-JP'),
+            type: 'test',
+          });
+        });
+      }
+
+      if (recordsRes.ok) {
+        const data = await recordsRes.json();
+        data.medicalRecords?.slice(0, 3).forEach((rec: { id: string; title: string; facilityName?: string; recordDate: string }) => {
+          records.push({
+            id: rec.id,
+            title: rec.title,
+            facility: rec.facilityName || '未設定',
+            date: new Date(rec.recordDate).toLocaleDateString('ja-JP'),
+            type: 'visit',
+          });
+        });
+      }
+
+      // 日付でソート（新しい順）
+      records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setRecentRecords(records.slice(0, 5));
+    } catch (error) {
+      console.error('Failed to fetch recent records:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRecentRecords();
+  }, [fetchRecentRecords]);
+
   return (
     <motion.div
       variants={containerVariants}
@@ -112,26 +166,25 @@ export default function MedicalRecordPage() {
         <h2 className="mb-4 text-lg font-semibold">クイックアクション</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {quickActions.map((action) => (
-            <Card
-              key={action.title}
-              className="group cursor-pointer transition-all hover:border-primary/50 hover:shadow-md"
-            >
-              <CardHeader className="pb-2">
-                <div className={`mb-2 inline-flex rounded-lg p-2 ${action.bgColor}`}>
-                  <action.icon className={`h-5 w-5 ${action.color}`} />
-                </div>
-                <CardTitle className="text-base">{action.title}</CardTitle>
-                <CardDescription className="text-xs">
-                  {action.description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="ghost" size="sm" className="w-full justify-between">
-                  開く
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
+            <Link key={action.title} href={action.href}>
+              <Card className="group h-full cursor-pointer transition-all hover:border-primary/50 hover:shadow-md">
+                <CardHeader className="pb-2">
+                  <div className={`mb-2 inline-flex rounded-lg p-2 ${action.bgColor}`}>
+                    <action.icon className={`h-5 w-5 ${action.color}`} />
+                  </div>
+                  <CardTitle className="text-base">{action.title}</CardTitle>
+                  <CardDescription className="text-xs">
+                    {action.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button variant="ghost" size="sm" className="w-full justify-between">
+                    開く
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       </motion.div>
@@ -140,17 +193,23 @@ export default function MedicalRecordPage() {
       <motion.div variants={itemVariants}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">最近の記録</h2>
-          <Button variant="outline" size="sm">
-            <Plus className="mr-2 h-4 w-4" />
-            新規追加
-          </Button>
+          <Link href="/beneficiary/medical-record/records">
+            <Button variant="outline" size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              新規追加
+            </Button>
+          </Link>
         </div>
         <Card>
           <CardContent className="divide-y divide-border p-0">
-            {recentRecords.length > 0 ? (
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : recentRecords.length > 0 ? (
               recentRecords.map((record, index) => (
                 <motion.div
-                  key={record.id}
+                  key={`${record.type}-${record.id}`}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}

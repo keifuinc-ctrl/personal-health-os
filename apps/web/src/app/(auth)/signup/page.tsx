@@ -52,7 +52,7 @@ export default function SignUpPage() {
 
       router.push('/beneficiary/medical-record');
       router.refresh();
-    } catch (err) {
+    } catch {
       setError('登録に失敗しました。もう一度お試しください。');
     } finally {
       setIsLoading(false);

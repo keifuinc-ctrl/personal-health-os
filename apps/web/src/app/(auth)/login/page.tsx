@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/beneficiary/medical-record';
@@ -39,7 +39,7 @@ export default function LoginPage() {
 
       router.push(callbackUrl);
       router.refresh();
-    } catch (err) {
+    } catch {
       setError('ログインに失敗しました。もう一度お試しください。');
     } finally {
       setIsLoading(false);
@@ -150,3 +150,18 @@ export default function LoginPage() {
   );
 }
 
+function LoginFormFallback() {
+  return (
+    <div className="flex w-full max-w-md items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFormFallback />}>
+      <LoginForm />
+    </Suspense>
+  );
+}
