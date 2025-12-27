@@ -8,8 +8,8 @@
 
 import { db } from '@/lib/db';
 import { group, groupMember, healthData, medication, testResult } from '@/lib/db/schema';
-import { eq, and, ne, desc, inArray, sql, count } from 'drizzle-orm';
-import { calculateMatchingScore, isAIGatewayConfigured, AIProvider, MatchingResult } from './ai-gateway';
+import { eq, and, desc, inArray, sql, count } from 'drizzle-orm';
+import { calculateMatchingScore, isAIGatewayConfigured, AIProvider } from './ai-gateway';
 import { logSuccess, logFailure } from './audit-log';
 
 // グループ情報の型定義
@@ -218,7 +218,7 @@ export async function getAvailableGroupsForUser(userId: string): Promise<GroupIn
   const joinedGroupIds = userMemberships.map(m => m.groupId);
 
   // 公開グループを取得
-  let groupQuery = db
+  const groupQuery = db
     .select({
       id: group.id,
       name: group.name,

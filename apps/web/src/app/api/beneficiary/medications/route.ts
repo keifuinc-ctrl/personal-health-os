@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { medication } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
-import { eq, desc, and, ilike, sql } from 'drizzle-orm';
+import { eq, desc, and, ilike } from 'drizzle-orm';
 import { logSuccess, logFailure } from '@/lib/services/audit-log';
 import { createMedicationSchema } from '@/lib/validations/medication';
 import { headers } from 'next/headers';
