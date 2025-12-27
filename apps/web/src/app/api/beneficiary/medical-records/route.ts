@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { medicalRecord } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and, ilike, or } from 'drizzle-orm';
 import { logSuccess, logFailure } from '@/lib/services/audit-log';
 import { createMedicalRecordSchema } from '@/lib/validations/medical-record';
 import { headers } from 'next/headers';
 
-// GET /api/beneficiary/medical-records - 診療記録一覧取得
-export async function GET() {
+// GET /api/beneficiary/medical-records - 診療記録一覧取得（検索・フィルター対応）
+export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
@@ -21,14 +21,39 @@ export async function GET() {
       );
     }
 
+    // クエリパラメータを取得
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search');
+    const recordType = searchParams.get('recordType');
+
+    // 条件を構築
+    const conditions = [eq(medicalRecord.userId, session.user.id)];
+
+    // 検索条件（タイトルまたは内容）
+    if (search) {
+      conditions.push(
+        or(
+          ilike(medicalRecord.title, `%${search}%`),
+          ilike(medicalRecord.content, `%${search}%`)
+        )!
+      );
+    }
+
+    // 種類フィルター
+    if (recordType) {
+      conditions.push(eq(medicalRecord.recordType, recordType));
+    }
+
     const medicalRecords = await db
       .select()
       .from(medicalRecord)
-      .where(eq(medicalRecord.userId, session.user.id))
+      .where(and(...conditions))
       .orderBy(desc(medicalRecord.recordDate));
 
     await logSuccess(session.user.id, 'read', 'medical_record', undefined, {
       count: medicalRecords.length,
+      search,
+      recordType,
     });
 
     return NextResponse.json({ medicalRecords });

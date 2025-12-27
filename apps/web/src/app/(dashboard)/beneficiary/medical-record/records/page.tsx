@@ -14,6 +14,9 @@ import {
   ClipboardList,
   MessageSquare,
   MoreHorizontal,
+  Search,
+  X,
+  Download,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -79,6 +82,11 @@ export default function MedicalRecordsPage() {
   const [editingRecord, setEditingRecord] = useState<MedicalRecord | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
+  // 検索・フィルターの状態
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [isExporting, setIsExporting] = useState(false);
+
   const [formData, setFormData] = useState({
     recordType: 'visit',
     title: '',
@@ -90,7 +98,12 @@ export default function MedicalRecordsPage() {
 
   const fetchRecords = useCallback(async () => {
     try {
-      const response = await fetch('/api/beneficiary/medical-records');
+      const params = new URLSearchParams();
+      if (searchQuery) params.append('search', searchQuery);
+      if (typeFilter !== 'all') params.append('recordType', typeFilter);
+      
+      const url = `/api/beneficiary/medical-records${params.toString() ? `?${params.toString()}` : ''}`;
+      const response = await fetch(url);
       const data = await response.json();
       if (response.ok) {
         setRecords(data.medicalRecords);
@@ -100,7 +113,7 @@ export default function MedicalRecordsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [searchQuery, typeFilter]);
 
   useEffect(() => {
     fetchRecords();
@@ -193,6 +206,30 @@ export default function MedicalRecordsPage() {
     return recordTypes.find((t) => t.value === type) || recordTypes[4];
   };
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const response = await fetch('/api/beneficiary/medical-records/export');
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const contentDisposition = response.headers.get('Content-Disposition');
+        const filename = contentDisposition?.match(/filename="(.+)"/)?.[1] || 'medical-records.csv';
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error('Failed to export medical records:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <motion.div
       variants={containerVariants}
@@ -215,13 +252,26 @@ export default function MedicalRecordsPage() {
             </p>
           </div>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => handleOpenDialog()}>
-              <Plus className="mr-2 h-4 w-4" />
-              診療記録を追加
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            disabled={isExporting || records.length === 0}
+          >
+            {isExporting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-2 h-4 w-4" />
+            )}
+            CSVエクスポート
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => handleOpenDialog()}>
+                <Plus className="mr-2 h-4 w-4" />
+                診療記録を追加
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
             <form onSubmit={handleSubmit}>
               <DialogHeader>
@@ -324,6 +374,43 @@ export default function MedicalRecordsPage() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
+      </motion.div>
+
+      {/* Search & Filter */}
+      <motion.div variants={itemVariants} className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="タイトルや内容で検索..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
+              onClick={() => setSearchQuery('')}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="種類でフィルター" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">すべて</SelectItem>
+            {recordTypes.map((type) => (
+              <SelectItem key={type.value} value={type.value}>
+                {type.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </motion.div>
 
       {/* Records List */}

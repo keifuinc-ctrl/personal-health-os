@@ -11,6 +11,9 @@ import {
   ArrowLeft,
   CheckCircle,
   XCircle,
+  Search,
+  X,
+  Download,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -28,6 +31,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Medication {
   id: string;
@@ -64,6 +74,11 @@ export default function MedicationsPage() {
   const [editingMedication, setEditingMedication] = useState<Medication | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
+  // 検索・フィルターの状態
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<string>('all');
+  const [isExporting, setIsExporting] = useState(false);
+
   // フォームの状態
   const [formData, setFormData] = useState({
     name: '',
@@ -78,7 +93,12 @@ export default function MedicationsPage() {
 
   const fetchMedications = useCallback(async () => {
     try {
-      const response = await fetch('/api/beneficiary/medications');
+      const params = new URLSearchParams();
+      if (searchQuery) params.append('search', searchQuery);
+      if (activeFilter !== 'all') params.append('isActive', activeFilter);
+      
+      const url = `/api/beneficiary/medications${params.toString() ? `?${params.toString()}` : ''}`;
+      const response = await fetch(url);
       const data = await response.json();
       if (response.ok) {
         setMedications(data.medications);
@@ -88,7 +108,7 @@ export default function MedicationsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [searchQuery, activeFilter]);
 
   useEffect(() => {
     fetchMedications();
@@ -183,6 +203,30 @@ export default function MedicationsPage() {
     return new Date(dateString).toLocaleDateString('ja-JP');
   };
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const response = await fetch('/api/beneficiary/medications/export');
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const contentDisposition = response.headers.get('Content-Disposition');
+        const filename = contentDisposition?.match(/filename="(.+)"/)?.[1] || 'medications.csv';
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error('Failed to export medications:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <motion.div
       variants={containerVariants}
@@ -205,13 +249,26 @@ export default function MedicationsPage() {
             </p>
           </div>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => handleOpenDialog()}>
-              <Plus className="mr-2 h-4 w-4" />
-              薬を追加
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            disabled={isExporting || medications.length === 0}
+          >
+            {isExporting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-2 h-4 w-4" />
+            )}
+            CSVエクスポート
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => handleOpenDialog()}>
+                <Plus className="mr-2 h-4 w-4" />
+                薬を追加
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
             <form onSubmit={handleSubmit}>
               <DialogHeader>
@@ -323,6 +380,40 @@ export default function MedicationsPage() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
+      </motion.div>
+
+      {/* Search & Filter */}
+      <motion.div variants={itemVariants} className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="薬品名で検索..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
+              onClick={() => setSearchQuery('')}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        <Select value={activeFilter} onValueChange={setActiveFilter}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="状態でフィルター" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">すべて</SelectItem>
+            <SelectItem value="true">服用中のみ</SelectItem>
+            <SelectItem value="false">終了のみ</SelectItem>
+          </SelectContent>
+        </Select>
       </motion.div>
 
       {/* Medications List */}
