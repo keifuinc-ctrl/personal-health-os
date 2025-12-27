@@ -1,0 +1,40 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+.next
+.turbo
+dist
+out
+build
+
+# Environment
+.env
+.env.local
+.env.*.local
+*.local
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Testing
+coverage
+.nyc_output
+
+# Misc
+*.pem
+.vercel
+
+# MCP config (contains secrets)
+docs/MCP.md
+
